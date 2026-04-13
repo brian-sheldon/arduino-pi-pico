@@ -125,10 +125,78 @@ float mhz = 0;
 int count = 0;
 int writecount = 0;
 bool first_req = true;
+
 //
 // loop
 //
+
 void loop() {
+  int loops = 100000;  // 10,000 - 65537 : 1.717 Mhz, 66,000 - 1,000,000 : 1.785 Mhz, why roughly 66,000 and higher results in speed jump
+  while ( loops-- > 0 ) {  // increases speed to 1.785 Mhz
+    // Clock is high
+    if ( ( gpio_get_all() & mreqPinMask ) == 0 ) {  // up to 1.163 mhz
+      addr = gpio_get_all() & addrPinMask;  // using this instead of getAddr increased speed from 0.279 mhz to 0.439 mhz
+      if ( ( gpio_get_all() & rdPinMask ) == 0 ) {  // up to 0.993 mhz
+        if ( first_req ) {
+          //
+          // Read request
+          //
+          first_req = false;
+          data = rom[addr];
+          gpio_set_dir_out_masked( dataPinMask );  // using this instead of initPins in both places increased speed from 0.123 mhz to 0.208 mhz
+          gpio_put_masked( dataPinMask, data << 14 );  // using this instead of putData increased speed from 0.208 mhz to 0.279 mhz
+          //sprintf( buffer, "Reading: %04x %02x", addr, data );
+          //Serial.println( buffer );
+        }
+      } else if ( ( gpio_get_all() & wrPinMask ) == 0 ) {  // up to 0.993 mhz
+        if ( first_req ) {
+          //
+          // Write request
+          //
+          first_req = false;
+          data = getData();
+          rom[addr] = data;
+          if ( ( writecount++ % 16000 ) == 0 ) {
+            sprintf( buffer, "Mhz: %02.3f Writing: %04x %02x", mhz, addr, data );
+            Serial.println( buffer );
+          }
+        }
+      }
+    } else {
+      if ( ! first_req ) {
+        first_req = true;
+        gpio_set_dir_in_masked( dataPinMask );  // using this instead of initPins in both places increased speed from 0.123 mhz to 0.208 mhz
+      }
+    }
+    //
+    // set clock low
+    //
+    gpio_put_masked( clkPinMask, 0 );  // replacing digitalWrite in this and the below case increased speed from 0.439 mhz to 0.798 mhz
+    //delay( delayTime );  // commented out both delays increased speed from 0.798 mhz to 0.872 mhz
+    //
+    // calculate the Mhz
+    //
+    if ( ( count++ % 1000000 ) == 0 ) {  // change count from 100,000 1,000,000 1.171 mhz
+      unsigned long currTime = micros();
+      unsigned long diffTime = currTime - lastTime;
+      if ( diffTime > 0.0 ) {
+        mhz = 1000000.0 / diffTime;
+      }
+      lastTime = currTime;
+    }
+    //
+    // set clock high
+    //
+    gpio_put_masked( clkPinMask, clkPinMask );  // replacing digitalWrite in this and the above case increased speed from 0.439 mhz to 0.798 mhz
+    //delay( delayTime );  // commented out both delays increased speed from 0.798 mhz to 0.872 mhz
+  }
+}
+
+//
+// this loop has both the original and new calls, kept to show the changes made
+//
+
+void fastslowloop() {
   // Clock is high
   if ( ( gpio_get_all() & mreqPinMask ) == 0 ) {  // up to 1.163 mhz
   //if ( digitalRead( mreqPin ) == 0 ) {
@@ -206,7 +274,3 @@ void loop() {
   count++;
 }
 
-void oldloop() {
-  //Serial.println( ++count );
-  //romLoop();
-}
