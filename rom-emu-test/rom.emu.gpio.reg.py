@@ -68,6 +68,9 @@ def read2( addr ):
 
 def write_mem( addr, v ):
     if addr == gpio_out:
+        # the following line is necessary as this keeps the value
+        # of the one bit set.  Changing it will cause the pico
+        # to stall and be very slow startup
         v = v | 0b0000_0000_1000_0000_0000_0000_0000_0000
         #print( f"{addr:08x} " + binunder( v ) )
     mem = memorymap.AddressRange( start=addr, length=4 )
