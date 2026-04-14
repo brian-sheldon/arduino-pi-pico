@@ -22,6 +22,6 @@ The setup is using a Raspberry Pi Pico 2 W connected to a Z80 cpu.  The pins are
 
 ![pi.pico.z80.jpg](pi.pico.z80.jpg)
 
-
+I uploaded the original python version of this.  Not much time was put into it, I basically got it working and wanted to try an Arduino version.  The python and the arduino versions were all done yesterday with a few minor changes today, so I haven't put any time into refining the code.
 
 
