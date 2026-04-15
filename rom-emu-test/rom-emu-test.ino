@@ -99,16 +99,17 @@ void setup() {
   pinMode( wrPin, INPUT_PULLUP );
   pinMode( mreqPin, INPUT_PULLUP );
 
-  attachInterrupt( digitalPinToInterrupt( rdPin ), rdInterrupt, FALLING );
-  attachInterrupt( digitalPinToInterrupt( wrPin ), wrInterrupt, FALLING );
-  attachInterrupt( digitalPinToInterrupt( mreqPin ), mreqInterrupt, RISING );
+  //attachInterrupt( digitalPinToInterrupt( rdPin ), rdInterrupt, FALLING );
+  //attachInterrupt( digitalPinToInterrupt( wrPin ), wrInterrupt, FALLING );
+  //attachInterrupt( digitalPinToInterrupt( mreqPin ), mreqInterrupt, RISING );
 
 }
 
-int addr = 0;
-int data = 0;
+volatile int addr = 0;
+volatile int data = 0;
+volatile int wrdata = 0;
 
-float mhz = 0;
+volatile float mhz = 0;
 
 int delayTime = 0;
 int wrPrint = 16000; 
@@ -171,6 +172,7 @@ unsigned long lastTime;
 int count = 0;
 int writecount = 0;
 bool first_req = true;
+bool outputEnabled = false;
 
 //
 // loop1 - runs on the second core
@@ -201,7 +203,7 @@ void loop1() {
           //
           first_req = false;
           addr = all & addrPinMask;
-          data = getData();
+          data = ( all & dataPinMask ) >> 14;
           rom[addr] = data;
           //sprintf( buffer, "Mhz: %02.6f Writing: %04x %02x", mhz, addr, data );
           //Serial.println( buffer );
