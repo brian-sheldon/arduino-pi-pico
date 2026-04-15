@@ -71,16 +71,63 @@ int addrPinMask, wrPinMask, rdPinMask, mreqPinMask;
 int dataPinMask, clkPinMask;
 int specPinMask, ledPinMask;
 
+volatile int event = 0;
+
+void rdInterrupt() {
+  event = 1;
+}
+
+void wrInterrupt() {
+  event = 2;
+}
+
+void mreqInterrupt() {
+  event = 3;
+}
+
 void setup() {
   Serial.begin( 115200 );
   delay( 200 );
+
+  Serial.println( "Setup ..." );
+
+  pinMode( LED_BUILTIN, OUTPUT );
+  digitalWrite( LED_BUILTIN, 1 );
+  pinMode( 26, INPUT_PULLUP );
+
+  pinMode( rdPin, INPUT_PULLUP );
+  pinMode( wrPin, INPUT_PULLUP );
+  pinMode( mreqPin, INPUT_PULLUP );
+
+  attachInterrupt( digitalPinToInterrupt( rdPin ), rdInterrupt, FALLING );
+  attachInterrupt( digitalPinToInterrupt( wrPin ), wrInterrupt, FALLING );
+  attachInterrupt( digitalPinToInterrupt( mreqPin ), mreqInterrupt, RISING );
+
+}
+
+int addr = 0;
+int data = 0;
+
+float mhz = 0;
+
+int delayTime = 0;
+int wrPrint = 16000; 
+
+char buffer0[100];
+
+void loop() {
+  
+  sprintf( buffer0, "mhz: %02.6f addr: %04x data: %02x event: %02d", mhz, addr, data, event );
+  Serial.println( buffer0 );
+
+  delay( 100 );
+
+}
+
+void setup1() {
   
   initRom();
 
-  pinMode( LED_BUILTIN, OUTPUT );
-  pinMode( 26, INPUT_PULLUP );
-  
-  
   // pin masks    3322222222221111111111
   //              10987654321098765432109876543210
   addrPinMask = 0b00000000000000000000011111111111;  // gp0-10
@@ -100,66 +147,64 @@ void setup() {
   gpio_init_mask( clkPinMask );
   
   gpio_set_dir_in_masked( addrPinMask );
-  gpio_set_dir_in_masked( wrPinMask );
-  gpio_set_dir_in_masked( rdPinMask );
+  //gpio_set_dir_in_masked( wrPinMask );
+  //gpio_set_dir_in_masked( rdPinMask );
   gpio_set_dir_in_masked( mreqPinMask );
   gpio_set_dir_in_masked( dataPinMask );  // initially start as inputs, but change to outputs during writes
   gpio_set_dir_out_masked( clkPinMask );
+  
+
 
   //initPins( addrPins, 11, INPUT );
   //initPins( ctrlPins, 3, INPUT );
   //initPins( dataPins, 8, INPUT );
   //pinMode( clockPin, OUTPUT );
+
+
 }
 
-int clk = 0;
-int addr = 0;
-int data = 0;
-
-int delayTime = 0;
 
 char buffer[100];
 
 unsigned long lastTime;
-float mhz = 0;
+
 int count = 0;
 int writecount = 0;
 bool first_req = true;
 
 //
-// loop
+// loop1 - runs on the second core
 //
-
-void loop() {
-  int loops = 100000;  // 10,000 - 65537 : 1.717 Mhz, 66,000 - 1,000,000 : 1.785 Mhz, why roughly 66,000 and higher results in speed jump
+void loop1() {
+  int loops = 1000000;  // 10,000 - 65537 : 1.717 Mhz, 66,000 - 1,000,000 : 1.785 Mhz, why roughly 66,000 and higher results in speed jump
   while ( loops-- > 0 ) {  // increases speed to 1.785 Mhz
     // Clock is high
-    if ( ( gpio_get_all() & mreqPinMask ) == 0 ) {  // up to 1.163 mhz
-      addr = gpio_get_all() & addrPinMask;  // using this instead of getAddr increased speed from 0.279 mhz to 0.439 mhz
-      if ( ( gpio_get_all() & rdPinMask ) == 0 ) {  // up to 0.993 mhz
+    int all = gpio_get_all();
+    if ( ( all & mreqPinMask ) == 0 ) {  // up to 1.163 mhz
+      if ( ( all & rdPinMask ) == 0 ) {  // up to 0.993 mhz
         if ( first_req ) {
           //
           // Read request
           //
           first_req = false;
+          addr = all & addrPinMask;
           data = rom[addr];
           gpio_set_dir_out_masked( dataPinMask );  // using this instead of initPins in both places increased speed from 0.123 mhz to 0.208 mhz
           gpio_put_masked( dataPinMask, data << 14 );  // using this instead of putData increased speed from 0.208 mhz to 0.279 mhz
           //sprintf( buffer, "Reading: %04x %02x", addr, data );
           //Serial.println( buffer );
         }
-      } else if ( ( gpio_get_all() & wrPinMask ) == 0 ) {  // up to 0.993 mhz
+      } else if ( ( all & wrPinMask ) == 0 ) {  // up to 0.993 mhz
         if ( first_req ) {
           //
           // Write request
           //
           first_req = false;
+          addr = all & addrPinMask;
           data = getData();
           rom[addr] = data;
-          if ( ( writecount++ % 16000 ) == 0 ) {
-            sprintf( buffer, "Mhz: %02.3f Writing: %04x %02x", mhz, addr, data );
-            Serial.println( buffer );
-          }
+          //sprintf( buffer, "Mhz: %02.6f Writing: %04x %02x", mhz, addr, data );
+          //Serial.println( buffer );
         }
       }
     } else {
@@ -172,24 +217,22 @@ void loop() {
     // set clock low
     //
     gpio_put_masked( clkPinMask, 0 );  // replacing digitalWrite in this and the below case increased speed from 0.439 mhz to 0.798 mhz
-    //delay( delayTime );  // commented out both delays increased speed from 0.798 mhz to 0.872 mhz
-    //
-    // calculate the Mhz
-    //
-    if ( ( count++ % 1000000 ) == 0 ) {  // change count from 100,000 1,000,000 1.171 mhz
-      unsigned long currTime = micros();
-      unsigned long diffTime = currTime - lastTime;
-      if ( diffTime > 0.0 ) {
-        mhz = 1000000.0 / diffTime;
-      }
-      lastTime = currTime;
-    }
+    //if ( delayTime != 0 ) delay( delayTime );  // commented out both delays increased speed from 0.798 mhz to 0.872 mhz
     //
     // set clock high
     //
     gpio_put_masked( clkPinMask, clkPinMask );  // replacing digitalWrite in this and the above case increased speed from 0.439 mhz to 0.798 mhz
-    //delay( delayTime );  // commented out both delays increased speed from 0.798 mhz to 0.872 mhz
+    //if ( delayTime != 0 ) delay( delayTime );  // commented out both delays increased speed from 0.798 mhz to 0.872 mhz
   }
+  //
+  // calculate the Mhz
+  //
+  unsigned long currTime = micros();
+  unsigned long diffTime = currTime - lastTime;
+  if ( diffTime > 0.0 ) {
+    mhz = 1000000.0 / diffTime;
+  }
+  lastTime = currTime;
 }
 
 //
@@ -248,15 +291,15 @@ void fastslowloop() {
   //}
   // set clock high
   //if ( ( count % 100 ) == 0 ) {
-    if ( ( count % 1000000 ) == 0 ) {  // change count from 100,000 1,000,000 1.171 mhz
+    //if ( ( count % 1000000 ) == 0 ) {  // change count from 100,000 1,000,000 1.171 mhz
       unsigned long currTime = micros();
       unsigned long diffTime = currTime - lastTime;
       //Serial.println( currTime );
       if ( diffTime > 0.0 ) {
-        mhz = 1000000.0 / diffTime;
+        mhz = 100000.0 / diffTime;
       }
       lastTime = currTime;
-    }
+    //}
     /*
     if ( digitalRead( 26 ) == 0 ) {
       delayTime = 0;
