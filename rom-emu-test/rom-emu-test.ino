@@ -10,8 +10,10 @@ void setup() {
   
   pinMode( LED_BUILTIN, OUTPUT );
   digitalWrite( LED_BUILTIN, 1 );
-
-  pinMode( 26, INPUT_PULLUP );  // Used to control speed
+  
+  gpio_init_mask( gp27PinMask );
+  gpio_set_dir_in_masked( gp27PinMask );
+  pinMode( 27, INPUT_PULLUP );  // Used to control speed
   
 }
 
@@ -43,11 +45,13 @@ void loop() {
     sprintf( buffer0, "mhz: %02.6f addr: %04x data: %02x", mhz, addr, data );
     Serial.println( buffer0 );
   }
+  
   //
-  //
+  // speed control, I started with using gp26, but it is defective on my board and quits working after a while,
+  // not surprised as I discovered the analog function of these pins did not work a while ago.
   //
 
-  if ( digitalRead( 26 ) == LOW ) {
+  if ( ( gpio_get_all() & gp27PinMask ) != 0 ) {
     delayTime = 0;
     fast = true;
   } else {
