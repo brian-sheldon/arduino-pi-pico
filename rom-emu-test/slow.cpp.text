@@ -1,0 +1,160 @@
+
+
+byte addrPins[] = {
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+};
+
+byte ctrlPins[] = {
+  11, 12, 13
+};
+
+byte dataPins[] = {
+  14, 15, 16, 17, 18, 19, 20, 21
+};
+
+
+byte mreqPin = 13;
+byte wrPin = 11;
+byte rdPin = 12;
+byte clockPin = 22;
+
+
+void initPins( byte* pins, int len, int inout ) {
+  for ( int i = 0; i < len; i++ ) {
+    pinMode( pins[i], inout );
+  }
+}
+
+int getAddr() {
+  int v = 0;
+  for ( int i = 10; i >= 0; i-- ) {
+    int p = digitalRead( i );
+    v = ( v << 1 ) + p;
+  }
+  return v;
+}
+
+int getData() {
+  int v = 0;
+  for ( int i = 7; i >= 0; i-- ) {
+    v = ( v << 1 ) + digitalRead( dataPins[i] );
+  }
+  return v;
+}
+
+void putData( int v ) {
+  for ( int i = 0; i < 8; i++ ) {
+    digitalWrite( dataPins[i], v & 1 );
+    v = v >> 1;
+  }
+}
+
+
+byte rom[65536];
+
+byte ops[] = {
+  0x3e, 0x00,         // ld a,0
+  0x21, 0x00, 0x01,   // ld hl,0x100
+  0x77,               // ld (hl),a
+  0x3c,               // inc a
+  0xc3, 0x02, 0x00    // jp 2
+};
+void initRom() {
+  int i;
+  for ( int i = 0; i < 65536; i++ ) {
+    if ( i < 10 ) {
+      rom[i] = ops[i];
+    } else {
+      rom[i] = 0;
+    }
+  }
+}
+
+
+
+
+
+
+
+//
+// this loop has both the original and new calls, kept to show the changes made
+//
+
+void fastslowloop() {
+  // Clock is high
+  if ( ( gpio_get_all() & mreqPinMask ) == 0 ) {  // up to 1.163 mhz
+  //if ( digitalRead( mreqPin ) == 0 ) {
+    addr = gpio_get_all() & addrPinMask;  // using this instead of getAddr increased speed from 0.279 mhz to 0.439 mhz
+    //addr = getAddr();
+    if ( ( gpio_get_all() & rdPinMask ) == 0 ) {  // up to 0.993 mhz
+    //if ( digitalRead( rdPin ) == 0 ) {
+      if ( first_req ) {
+        //
+        // Read request
+        //
+        first_req = false;
+        data = rom[addr];
+        gpio_set_dir_out_masked( dataPinMask );  // using this instead of initPins in both places increased speed from 0.123 mhz to 0.208 mhz
+        //initPins( dataPins, 8, OUTPUT );
+        gpio_put_masked( dataPinMask, data << 14 );  // using this instead of putData increased speed from 0.208 mhz to 0.279 mhz
+        //putData( data );
+        //sprintf( buffer, "Reading: %04x %02x", addr, data );
+        //Serial.println( buffer );
+      }
+    } else if ( ( gpio_get_all() & wrPinMask ) == 0 ) {  // up to 0.993 mhz
+    //} else if ( digitalRead( wrPin ) == 0 ) {
+      if ( first_req ) {
+        //
+        // Write request
+        //
+        first_req = false;
+        data = getData();
+        rom[addr] = data;
+        if ( ( writecount++ % 16000 ) == 0 ) {
+          sprintf( buffer, "Mhz: %02.3f Writing: %04x %02x", mhz, addr, data );
+          Serial.println( buffer );
+        }
+      }
+    }
+  } else {
+    if ( ! first_req ) {
+      first_req = true;
+      gpio_set_dir_in_masked( dataPinMask );  // using this instead of initPins in both places increased speed from 0.123 mhz to 0.208 mhz
+      //initPins( dataPins, 8, INPUT );
+    }
+  }
+  // set clock low
+  gpio_put_masked( clkPinMask, 0 );  // replacing digitalWrite in this and the below case increased speed from 0.439 mhz to 0.798 mhz
+  //digitalWrite( clockPin, 0 );
+  //digitalWrite( LED_BUILTIN, LOW );
+  //if ( delayTime > 0 ) {
+    //delay( delayTime );  // commented out both delays increased speed from 0.798 mhz to 0.872 mhz
+  //}
+  // set clock high
+  //if ( ( count % 100 ) == 0 ) {
+    //if ( ( count % 1000000 ) == 0 ) {  // change count from 100,000 1,000,000 1.171 mhz
+      unsigned long currTime = micros();
+      unsigned long diffTime = currTime - lastTime;
+      //Serial.println( currTime );
+      if ( diffTime > 0.0 ) {
+        mhz = 100000.0 / diffTime;
+      }
+      lastTime = currTime;
+    //}
+    /*
+    if ( digitalRead( 26 ) == 0 ) {
+      delayTime = 0;
+    } else {
+      delayTime = 0;
+    }
+    */
+  //}
+  gpio_put_masked( clkPinMask, clkPinMask );  // replacing digitalWrite in this and the above case increased speed from 0.439 mhz to 0.798 mhz
+  //digitalWrite( clockPin, 1 );
+  //digitalWrite( LED_BUILTIN, HIGH );
+  //if ( delayTime > 0 ) {
+    //delay( delayTime );  // commented out both delays increased speed from 0.798 mhz to 0.872 mhz
+  //}
+  count++;
+}
+

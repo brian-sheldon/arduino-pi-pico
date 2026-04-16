@@ -1,0 +1,169 @@
+
+//
+// ram/rom buffer, technically only a rom as I have no write protection as
+// it would slow down loop.  Will replace speed with functionality once the
+// code is sufficiently clean and efficient.  Mind you, for write protection
+// external logic would avoid any slow downs.  This is only for testing, so
+// it is more an exercise in discovering code efficiency techniques.  To do
+// this long term, the pios would probably be a better solution.
+//
+// Thoughts on improving this, are that the next steps would be to one, try
+// accessing memory directly to avoid the function calls.  Next would be to
+// consider imbedding assembly within the code.  At which point, only using
+// pios would be the only other technique I can think of.  Given that there
+// is already the One Roms by Piers Rocks, this is more about learning without
+// first seeing already built code, plus this would also be useful for emulating
+// hardware other than rams and roms, such as io devices.
+//
+
+byte rom[65536];
+
+byte ops[] = {
+  0x3e, 0x00,         // ld a,0
+  0x21, 0x00, 0x01,   // ld hl,0x100
+  0x77,               // ld (hl),a
+  0x3c,               // inc a
+  0xc3, 0x02, 0x00    // jp 2
+};
+
+void initRom() {
+  int i;
+  for ( int i = 0; i < 65536; i++ ) {
+    if ( i < 10 ) {
+      rom[i] = ops[i];
+    } else {
+      rom[i] = 0;
+    }
+  }
+}
+
+//
+// gpio pin vars
+//
+
+byte mreqPin = 13;
+byte wrPin = 11;
+byte rdPin = 12;
+byte clockPin = 22;
+
+int addrPinMask, wrPinMask, rdPinMask, mreqPinMask;
+int dataPinMask, clkPinMask;
+int specPinMask, ledPinMask;
+
+//
+// ram/rom emulation vars
+//
+
+volatile int addr = 0;
+volatile int data = 0;
+volatile int wrdata = 0;
+
+volatile float mhz = 0;
+
+int delayTime = 0;
+
+//
+// clock, ram, rom emulation setup
+//
+
+// core1 sprintf buffer for core1
+
+char buffer[100];
+
+void fast_core1_setup() {
+  
+  //
+  // Init memory and add some z80 code
+  //
+
+  initRom();
+  
+  //
+  // gpio pin masks and config
+  //
+  // pin masks    3322222222221111111111
+  //              10987654321098765432109876543210
+  addrPinMask = 0b00000000000000000000011111111111;  // gp0-10
+  wrPinMask   = 0b00000000000000000000100000000000;  // gp11
+  rdPinMask   = 0b00000000000000000001000000000000;  // gp12
+  mreqPinMask = 0b00000000000000000010000000000000;  // gp13
+  dataPinMask = 0b00000000001111111100000000000000;  // gp14-21
+  clkPinMask  = 0b00000000010000000000000000000000;  // gp22
+  specPinMask = 0b00000000100000000000000000000000;  // gp23 - must not be changed
+  ledPinMask  = 0b00000010000000000000000000000000;  // gp25 - builtin led
+  
+  gpio_init_mask( addrPinMask );
+  gpio_init_mask( wrPinMask );
+  gpio_init_mask( rdPinMask );
+  gpio_init_mask( mreqPinMask );
+  gpio_init_mask( dataPinMask );
+  gpio_init_mask( clkPinMask );
+  
+  gpio_set_dir_in_masked( addrPinMask );
+  gpio_set_dir_in_masked( wrPinMask );
+  gpio_set_dir_in_masked( rdPinMask );
+  gpio_set_dir_in_masked( mreqPinMask );
+  gpio_set_dir_in_masked( dataPinMask );  // initially start as inputs, but change to outputs during mem rd requests
+  gpio_set_dir_out_masked( clkPinMask );
+  
+}
+
+//
+// clock, ram, rom emulation loop
+//
+
+// used so rd, wr requests do not get processed more than once for a single request
+
+bool first_req = true;
+
+void fast_core1_loop( int loops ) {
+  
+  while ( loops-- > 0 ) {  // increases speed to 1.785 Mhz
+    // Clock is high
+    int all = gpio_get_all();
+    if ( ( all & mreqPinMask ) == 0 ) {  // up to 1.163 mhz
+      if ( ( all & rdPinMask ) == 0 ) {  // up to 0.993 mhz
+        if ( first_req ) {
+          //
+          // Read request
+          //
+          first_req = false;
+          addr = all & addrPinMask;
+          data = rom[addr];
+          gpio_set_dir_out_masked( dataPinMask );  // using this instead of initPins in both places increased speed from 0.123 mhz to 0.208 mhz
+          gpio_put_masked( dataPinMask, data << 14 );  // using this instead of putData increased speed from 0.208 mhz to 0.279 mhz
+          //sprintf( buffer, "Reading: %04x %02x", addr, data );
+          //Serial.println( buffer );
+        }
+      } else if ( ( all & wrPinMask ) == 0 ) {  // up to 0.993 mhz
+        if ( first_req ) {
+          //
+          // Write request
+          //
+          first_req = false;
+          addr = all & addrPinMask;
+          data = ( all & dataPinMask ) >> 14;
+          rom[addr] = data;
+          //sprintf( buffer, "Mhz: %02.6f Writing: %04x %02x", mhz, addr, data );
+          //Serial.println( buffer );
+        }
+      }
+    } else {
+      if ( ! first_req ) {
+        first_req = true;
+        gpio_set_dir_in_masked( dataPinMask );  // using this instead of initPins in both places increased speed from 0.123 mhz to 0.208 mhz
+      }
+    }
+    //
+    // set clock low
+    //
+    gpio_put_masked( clkPinMask, 0 );  // replacing digitalWrite in this and the below case increased speed from 0.439 mhz to 0.798 mhz
+    //if ( delayTime != 0 ) delay( delayTime );  // commented out both delays increased speed from 0.798 mhz to 0.872 mhz
+    //
+    // set clock high
+    //
+    gpio_put_masked( clkPinMask, clkPinMask );  // replacing digitalWrite in this and the above case increased speed from 0.439 mhz to 0.798 mhz
+    //if ( delayTime != 0 ) delay( delayTime );  // commented out both delays increased speed from 0.798 mhz to 0.872 mhz
+  }
+  
+}
