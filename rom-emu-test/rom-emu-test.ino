@@ -33,23 +33,25 @@ void setup1() {
 
 char buffer0[100];
 
+int lastAddr = 0xffff;
 int fast = true;
 int delayTime = 0;
 
 void loop() {
   
-  sprintf( buffer0, "mhz: %02.6f addr: %04x data: %02x", mhz, addr, data );
-  Serial.println( buffer0 );
-  
+  if ( fast ) {
+    sprintf( buffer0, "mhz: %02.6f addr: %04x data: %02x", mhz, addr, data );
+    Serial.println( buffer0 );
+  }
   //
   //
   //
 
-  if ( digitalRead( 26 ) == HIGH ) {
+  if ( digitalRead( 26 ) == LOW ) {
     delayTime = 0;
     fast = true;
   } else {
-    delayTime = 100;
+    delayTime = 500;
     fast = false;
   }
 
@@ -72,12 +74,23 @@ void loop1() {
   // Run the processor for number of loops indicated by var loops
   //
   int loops;
-  if ( true ) {
+  //
+  // Note:  After a bit of time running, gpio 26 cannot be read.
+  // This is used for speed control.  The default is now fast,
+  // so if it fails it will run in fast mode.
+  //
+  if ( fast ) {
     loops = 1000000;  // 10,000 - 65537 : 1.717 Mhz, 66,000 - 1,000,000 : 1.785 Mhz, why roughly 66,000 and higher results in speed jump
     fast_core1_loop( loops );
   } else {
-    loops = 500 / delayTime;  // Ensures control is returned every second
-    //variable_core1_loop( loops, delayTime );
+    loops = 1;
+    fast_core1_loop( loops );
+    if ( addr != lastAddr ) {
+      sprintf( buffer0, "mhz: %02.6f addr: %04x data: %02x", mhz, addr, data );
+      Serial.println( buffer0 );
+      lastAddr = addr;
+    }
+    delay( delayTime );
   }
   //
   // calculate the Mhz

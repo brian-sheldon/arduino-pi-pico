@@ -1,7 +1,7 @@
 
 # Experimenting with using a Raspberry Pi Pico 2 W to emulate ROM, RAM and CLOCK
 
-### Current status: speed 4.88 Mhz, not sure if I believe this as I only removed the unused code and put it in a txt file for reference, plus placed all the clock, ram, rom emulation in fast.core1.h.  So where did the increase come from.  It might have been a small change in the setup in how how the gpios were configured.  But, I did connect the clock to my scope and it did show a similar value, actually higher as the clock is inconsistent, so it will sometimes measure peaks with no rd or wr requests, which slow down the clock.  I am still not totally convinced.
+### Current status: speed 4.90 Mhz, have added speed control by using the fast loop with a loop count of 1, so it only runs one time and then returns to loop1, where a delay can be used to slow it down.
 
 ## Issues with speed
 
