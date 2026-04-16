@@ -22,7 +22,7 @@ byte ops[] = {
   0x3e, 0x00,         // ld a,0
   0x21, 0x00, 0x01,   // ld hl,0x100
   0x77,               // ld (hl),a
-  //0xd3, 0x20,         // out (0x20),a
+  0xd3, 0x20,         // out (0x20),a
   0x3c,               // inc a
   0xc3, 0x02, 0x00,   // jp 2
   0x00, 0x00, 0x00,
@@ -133,22 +133,18 @@ void output( int port, int data );
 // clock, ram, rom emulation loop
 //
 
-// used so rd, wr requests do not get processed more than once for a single request
-
 void __not_in_flash_func( fast_core1_loop )( int loops ) {
-  int all;
   bool processingRequest = false;
-  while ( loops-- > 0 ) {  // increases speed to 1.785 Mhz
-    // Clock is high
-    all = gpio_get_all();
+  while ( loops-- > 0 ) {
+    // Clock is always high at this point high
+    int all = gpio_get_all();
     //
-    // Current algorithm
+    // Check for 
     //
     if ( ( all & rwPinMask ) != rwPinMask ) {
-      //Serial.println( "rw request ..." );
       if ( ! processingRequest ) {
-        //Serial.println( "start of request ..." );
         processingRequest = true;
+        addr = all & addrPinMask;
         //
         // check if rd low
         //
@@ -156,58 +152,38 @@ void __not_in_flash_func( fast_core1_loop )( int loops ) {
           //
           // rd request
           //
-          //Serial.print( "rd request ... " );
           gpio_set_dir_out_masked( dataPinMask );
           if ( ( all & mreqPinMask ) == 0 ) {
             //
             // process mem rd request
             //
-            addr = all & addrPinMask;
             data = rom[addr];
             //gpio_put_masked( dataPinMask, data << 14 );
-            //Serial.print( "addr: " );
-            //Serial.print( addr );
           } else {
             //
             // process io rd request
             //
-            port = all & portPinMask;
-            //data = 0xff;
-            data = input( port );
+            data = input( addr );
             //gpio_put_masked( dataPinMask, data << 14 );  // Having this twice cuts speed in half
-            //Serial.print( "port: " );
-            //Serial.print( port );
           }
           gpio_put_masked( dataPinMask, data << 14 );
-          //Serial.print( " data: " );
-          //Serial.println( data );
         } else {  // wr is the only other option
           //
           // wr request
           //
-          //Serial.print( "wr request ... " );
           data = ( all & dataPinMask ) >> 14;
           if ( ( all & mreqPinMask ) == 0 ) {
             //
             // process mem wr request
             //
-            addr = all & addrPinMask;
             rom[addr] = data;
-            //Serial.print( "addr: " );
-            //Serial.print( addr );
           } else {
             //
             // process io wr request
             //
-            port = all & portPinMask;
-            output( port, data );
-            //Serial.print( "port: " );
-            //Serial.print( port );
+            output( addr, data );
           }
-          //Serial.print( " data: " );
-          //Serial.println( data );
         }
-        //delay( 1000 );
       }
     } else {
       if ( processingRequest ) {

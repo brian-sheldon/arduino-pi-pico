@@ -1,7 +1,7 @@
 
 # Experimenting with using a Raspberry Pi Pico 2 W to emulate ROM, RAM and CLOCK
 
-### Current status: speed 4.94 Mhz, restructured emulation loop, now has hooks for io requests that current do nothing, have added speed control by using the fast loop with a loop count of 1, so it only runs one time and then returns to loop1, where a delay can be used to slow it down.
+### Current status: speed 5.27 Mhz, restructured emulation loop, now has hooks for io requests that current do nothing, have added speed control by using the fast loop with a loop count of 1, so it only runs one time and then returns to loop1, where a delay can be used to slow it down.
 
 ## Issues with speed
 
