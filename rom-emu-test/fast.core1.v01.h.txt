@@ -1,4 +1,8 @@
 
+// Copyright (C) 2026 Brian Sheldon
+//
+// MIT License
+
 //
 // ram/rom buffer, technically only a rom as I have no write protection as
 // it would slow down loop.  Will replace speed with functionality once the

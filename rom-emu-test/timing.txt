@@ -1,4 +1,8 @@
 
+// Copyright (C) 2026 Brian Sheldon
+//
+// MIT License
+
        |                m1 cycle               |
        |    1    |    2    |    3    |    4    |    1      
 
@@ -92,5 +96,89 @@ wr                    |         |
              +-------------------------+
 data   ------|                         |-
              +-------------------------+
+
+=================================================================================
+
+Control Decoding Logic
+
+Goal is to allow the pico to emulate ram, rom, io.  This would require the mreq, iorq, rd, wr signals, which is 4 inputs.  To save one input, the mreq and iorq can be combined with for example low meaning mreg and high meaning iorq.  Then when the pico detects a low on either rd or wr, it checks the combined signal to see if it should do a mreq or iorq.
+
+mreq and rd or mreq and wr
+
+   nor gate
+mreq rd/wr out
+ 0    0     1
+ 0    1     0
+ 1    0     0
+ 1    1     0
+
+   nand gate
+mreq rd/wr out
+ 0    0     1
+ 0    1     1
+ 1    0     1
+ 1    1     0
+
+       +----+
+mreq --+     \
+       | nor  +o-+ mreq rd
+rd   --+     /   |
+       +----+    |
+                 | +----+
+                 +-+     \
+                   | nand +o- mreq that does not include the refresh
+                 +-+     /
+                 | +----+
+       +----+    |
+mreq --+     \   |
+       | nor  +o-+ mreq wr
+wr   --+     /
+       +----+
+
+or just use this
+
+not mreq nand rfsh
+
+   not  nand
+mreq mreq rfsh  out
+ 0    1    0     1
+ 0    1    1     0
+ 1    0    0     1
+ 1    0    1     1
+
+      |\   +----+
+mreq -+ +o-+     \
+      |/   | nand +o- mreq that does not include the refresh 
+rfsh ------+     /
+           +----+
+
+
+
+=================================================================================
+
+List of my chip inventory
+
+- 2 x 74ls00 4 x 2-input nand gates
+- 2 x 74ls02 4 x 2-input nor gates
+- 2 x 74ls04 6 x not gates
+- 2 x 74ls08 4 x 2-input and gates
+- 2 x 74ls32 4 x 2-input or gates
+- 2 x 74ls47 bsd to 7-segment decoder/driver
+- 10 x 74ls74 2 x positive edge triggered d-type flip-flops
+- 2 x 74ls86 4 x 2-input xor gates
+- 2 x 74ls90 4-bit decade counter that generates bcd output up to 42 mhz, also divide by 2 and 5
+- 2 x 74ls138 3-8 line decoder/demultiplexer
+- 2 x 74ls245 8-bit bidirectional bus tranceiver with 3-state outputs
+
+- 2 x 74hc00
+- 2 x 74hc02
+- 2 x 74hc04
+- 2 x 74hc08
+- 2 x 74hc14 6 x schmit-trigger inverter 2v to 6v
+- 2 x 74hc32
+- 2 x 74hc138
+- 2 x 74hc164 8-bit serial-in/parallel-out shift register 2v to 6v
+- 2 x 74hc165 8-bit parallel-in/serial-out shift register 2v to 6v
+- 2 x 74hc595 8-bit serial-in/parallel-out chainable shift register 2v to 6v
 
 

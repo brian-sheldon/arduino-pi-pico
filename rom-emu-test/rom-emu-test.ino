@@ -1,5 +1,27 @@
 
+// Copyright (C) 2026 Brian Sheldon
+//
+// MIT License
+
 #include "fast.core1.h"
+
+int input( int port ) {
+  port = port & 0xff;
+  return 0xff;
+}
+
+int outputCount = 0;
+void output( int port, int data ) {
+  port = port & 0xff;
+  /*
+  if ( ( outputCount++ % 82233 ) == 0 ) {
+    Serial.print( "output port: " );
+    Serial.print( port );
+    Serial.print( " data: " );
+    Serial.println( data );
+  }
+  */
+}
 
 void setup() {
 
@@ -27,13 +49,20 @@ void setup1() {
 
 }
 
+char buffer0[100];
+
+void printState() {
+  int address = addr;
+  if ( reqId == 2 || reqId == 4 ) {
+    address = addr & 0xff;
+  }
+  sprintf( buffer0, "mhz: %02.6f req: %d addr: %04x data: %02x", mhz, reqId, address, data );
+  Serial.println( buffer0 );
+}
+
 //
 // core0 loop
 //
-
-// buffer0 is for core0 sprintf calls
-
-char buffer0[100];
 
 int lastAddr = 0xffff;
 int fast = true;
@@ -42,8 +71,7 @@ int delayTime = 0;
 void loop() {
   
   if ( fast ) {
-    sprintf( buffer0, "mhz: %02.6f addr: %04x data: %02x", mhz, addr, data );
-    Serial.println( buffer0 );
+    printState();
   }
   
   //
@@ -52,11 +80,17 @@ void loop() {
   //
 
   if ( ( gpio_get_all() & gp27PinMask ) != 0 ) {
-    delayTime = 0;
-    fast = true;
+    if ( ! fast ) {
+      Serial.println( "fast ..." );
+      delayTime = 0;
+      fast = true;
+    }
   } else {
-    delayTime = 500;
-    fast = false;
+    if ( fast ) {
+      Serial.println( "slow ..." );
+      delayTime = 500;
+      fast = false;
+    }
   }
 
   delay( 100 );
@@ -90,8 +124,7 @@ void loop1() {
     loops = 1;
     fast_core1_loop( loops );
     if ( addr != lastAddr ) {
-      sprintf( buffer0, "mhz: %02.6f addr: %04x data: %02x", mhz, addr, data );
-      Serial.println( buffer0 );
+      printState();
       lastAddr = addr;
     }
     delay( delayTime );
