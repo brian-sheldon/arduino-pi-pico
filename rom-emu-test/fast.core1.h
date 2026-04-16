@@ -189,9 +189,7 @@ void __not_in_flash_func( fast_core1_loop )( int loops ) {
       if ( processingRequest ) {
         processingRequest = false;
         gpio_set_dir_in_masked( dataPinMask );
-        //Serial.println( "end of request ..." );
       }
-      //delay( 500 );
     }
     //
     // set clock low
