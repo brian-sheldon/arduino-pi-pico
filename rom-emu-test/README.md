@@ -1,7 +1,13 @@
 
 # Experimenting with using a Raspberry Pi Pico 2 W to emulate ROM, RAM and CLOCK
 
-### Current status: speed 4.45 Mhz, not sure if I believe this as I only removed the unused code and put it in a txt file for reference, plus placed all the clock, ram, rom emulation in fast.core1.h.  So where did the increase come from.  It might have been a small change in the setup in how how the gpios were configured.  But, I did connect the clock to my scope and it did show a similar value, actually higher as the clock is inconsistent, so it will sometimes measure peaks with no rd or wr requests, which slow down the clock.  I am still not totally convinced.
+### Current status: speed 4.88 Mhz, not sure if I believe this as I only removed the unused code and put it in a txt file for reference, plus placed all the clock, ram, rom emulation in fast.core1.h.  So where did the increase come from.  It might have been a small change in the setup in how how the gpios were configured.  But, I did connect the clock to my scope and it did show a similar value, actually higher as the clock is inconsistent, so it will sometimes measure peaks with no rd or wr requests, which slow down the clock.  I am still not totally convinced.
+
+## Issues with speed
+
+I attempt to create a second emulation loop for when I wanted more control.  In that way, no if statements are required in the faster loop.  Doing this, the fast loop once again slowed down.  I believe the issue is related to cache size and adding this additional function, forced the code to be executed partially outside of cache.  I believe this is somewhat related to the gpio calls being in both functions.  So for now, I have this second slightly modified copy of the emulation loop mostly commented out.
+
+In the process of my initial investigation of this issue, I discovered another additional way to up the speed, by using the __not_in_flash_func macro.  Speed now 4.88 Mhz.
 
 Previous status: speed 2.67 Mhz, moved main loop into loop1 ( runs on second core ), removed more unnecessary code, all status is printed in loop ( runs on first core ), realized I had was still using the slower method of reading data lines.  After this change, I had to comment stop the interrupts as the loop hung.
 

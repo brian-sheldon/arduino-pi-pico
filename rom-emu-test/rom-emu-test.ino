@@ -10,7 +10,8 @@ void setup() {
   
   pinMode( LED_BUILTIN, OUTPUT );
   digitalWrite( LED_BUILTIN, 1 );
-  pinMode( 26, INPUT_PULLUP );
+
+  pinMode( 26, INPUT_PULLUP );  // Used to control speed
   
 }
 
@@ -32,10 +33,25 @@ void setup1() {
 
 char buffer0[100];
 
+int fast = true;
+int delayTime = 0;
+
 void loop() {
   
   sprintf( buffer0, "mhz: %02.6f addr: %04x data: %02x", mhz, addr, data );
   Serial.println( buffer0 );
+  
+  //
+  //
+  //
+
+  if ( digitalRead( 26 ) == HIGH ) {
+    delayTime = 0;
+    fast = true;
+  } else {
+    delayTime = 100;
+    fast = false;
+  }
 
   delay( 100 );
 
@@ -49,12 +65,20 @@ void loop() {
 
 unsigned long lastTime;
 
+void variable_core1_loop( int loops, int delayTime );
+
 void loop1() {
   //
   // Run the processor for number of loops indicated by var loops
   //
-  int loops = 1000000;  // 10,000 - 65537 : 1.717 Mhz, 66,000 - 1,000,000 : 1.785 Mhz, why roughly 66,000 and higher results in speed jump
-  fast_core1_loop( loops );
+  int loops;
+  if ( true ) {
+    loops = 1000000;  // 10,000 - 65537 : 1.717 Mhz, 66,000 - 1,000,000 : 1.785 Mhz, why roughly 66,000 and higher results in speed jump
+    fast_core1_loop( loops );
+  } else {
+    loops = 500 / delayTime;  // Ensures control is returned every second
+    //variable_core1_loop( loops, delayTime );
+  }
   //
   // calculate the Mhz
   //
@@ -65,3 +89,4 @@ void loop1() {
   }
   lastTime = currTime;
 }
+
