@@ -22,6 +22,9 @@ byte ops[] = {
   0x3e, 0x00,         // ld a,0
   0x21, 0x00, 0x01,   // ld hl,0x100
   0x77,               // ld (hl),a
+  0x57,               // ld d,a
+  0xdb, 0x10,         // in a,(0x10)
+  0x7a,               // ld a,d
   0xd3, 0x20,         // out (0x20),a
   0x3c,               // inc a
   0xc3, 0x02, 0x00,   // jp 2
@@ -37,7 +40,7 @@ byte ops[] = {
 void initRom() {
   int i;
   for ( int i = 0; i < 65536; i++ ) {
-    if ( i < 20 ) {
+    if ( i < 30 ) {
       rom[i] = ops[i];
     } else {
       rom[i] = 0;
@@ -133,6 +136,8 @@ void output( int port, int data );
 // clock, ram, rom emulation loop
 //
 
+int reqId = 0;
+
 void __not_in_flash_func( fast_core1_loop )( int loops ) {
   bool processingRequest = false;
   while ( loops-- > 0 ) {
@@ -157,12 +162,14 @@ void __not_in_flash_func( fast_core1_loop )( int loops ) {
             //
             // process mem rd request
             //
+            reqId = 1;
             data = rom[addr];
             //gpio_put_masked( dataPinMask, data << 14 );
           } else {
             //
             // process io rd request
             //
+            reqId = 2;
             data = input( addr );
             //gpio_put_masked( dataPinMask, data << 14 );  // Having this twice cuts speed in half
           }
@@ -171,6 +178,7 @@ void __not_in_flash_func( fast_core1_loop )( int loops ) {
           //
           // wr request
           //
+          reqId = 3;
           data = ( all & dataPinMask ) >> 14;
           if ( ( all & mreqPinMask ) == 0 ) {
             //
@@ -181,6 +189,7 @@ void __not_in_flash_func( fast_core1_loop )( int loops ) {
             //
             // process io wr request
             //
+            reqId = 4;
             output( addr, data );
           }
         }
