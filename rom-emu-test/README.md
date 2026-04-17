@@ -1,9 +1,18 @@
 
 # Experimenting with using a Raspberry Pi Pico 2 W to emulate ROM, RAM and CLOCK
 
-### Current status: speed 5.27 Mhz, restructured emulation loop, now has hooks for io requests that current do nothing, have added speed control by using the fast loop with a loop count of 1, so it only runs one time and then returns to loop1, where a delay can be used to slow it down.
+## Current Status:  Started to write a cli that runs via a serial terminal.  No commands yet, but a few control keys are defined as follows.
 
-## Issues with speed
+- ctrl-s   Turns on/off a repeating display of the last mhz, addr, data values
+- ctrl-f   Switchs from fast to slow cpu clock
+- PageUp   Redirects keyboard io to the cpu io queue, NOT YET IMPLEMENTED
+- PageDown Redirects keyboard io to the cli
+
+I am basically copying the cli I built in Javascript in my emu-sys-js project.  Although, I am already making improvements to the structure as each time I write this, I think of a better way of doing it.
+
+### Speed 5.40 Mhz, restructured emulation loop, now has hooks for io requests that current do nothing, have added speed control by using the fast loop with a loop count of 1, so it only runs one time and then returns to loop1, where a delay can be used to slow it down.
+
+### Issues with speed
 
 I attempt to create a second emulation loop for when I wanted more control.  In that way, no if statements are required in the faster loop.  Doing this, the fast loop once again slowed down.  I believe the issue is related to cache size and adding this additional function, forced the code to be executed partially outside of cache.  I believe this is somewhat related to the gpio calls being in both functions.  So for now, I have this second slightly modified copy of the emulation loop mostly commented out.
 
