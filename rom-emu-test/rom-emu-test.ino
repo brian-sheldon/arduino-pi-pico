@@ -5,14 +5,30 @@
 
 #include "fast.core1.h"
 
+#include "cli.h"
+
 int input( int port ) {
   port = port & 0xff;
-  return 0xff;
+  if ( port == 1 ) {
+    return 0x25;
+    while ( Serial.available() == 0 ) {}
+    char ch = Serial.read();
+    return (int)ch;
+  } else {
+    return 0xff;
+  }
 }
 
 int outputCount = 0;
 void output( int port, int data ) {
   port = port & 0xff;
+  if ( port == 2 ) {
+    if ( data >= 0x20 || data <= 0xfe ) {
+    } else {
+      data = '.';
+    }
+    //Serial.print( data );
+  }
   /*
   if ( ( outputCount++ % 82233 ) == 0 ) {
     Serial.print( "output port: " );
@@ -57,7 +73,9 @@ void printState() {
     address = addr & 0xff;
   }
   sprintf( buffer0, "mhz: %02.6f req: %d addr: %04x data: %02x", mhz, reqId, address, data );
-  Serial.println( buffer0 );
+  if ( showState ) {
+    Serial.println( buffer0 );
+  }
 }
 
 //
@@ -65,36 +83,18 @@ void printState() {
 //
 
 int lastAddr = 0xffff;
-int fast = true;
-int delayTime = 0;
 
 void loop() {
   
+  ioLoop();
+
   if ( fast ) {
     printState();
+    delay( 100 );
   }
   
-  //
-  // speed control, I started with using gp26, but it is defective on my board and quits working after a while,
-  // not surprised as I discovered the analog function of these pins did not work a while ago.
-  //
-
-  if ( ( gpio_get_all() & gp27PinMask ) != 0 ) {
-    if ( ! fast ) {
-      Serial.println( "fast ..." );
-      delayTime = 0;
-      fast = true;
-    }
-  } else {
-    if ( fast ) {
-      Serial.println( "slow ..." );
-      delayTime = 500;
-      fast = false;
-    }
-  }
-
-  delay( 100 );
-
+  delay( 1 );
+  
 }
 
 //
