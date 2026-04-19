@@ -38,6 +38,9 @@ void cmdLine( char *cmd ) {
 //
 // line editing loop
 //
+// This loop performs basic line editing functions such as backspace, left/right cursor movement and enter to
+// submit the command.  Enter will send cmd buffer to the cmdLine loop function.
+//
 
 const int cmdBufferLen = 101;
 char cmd[cmdBufferLen];
@@ -129,6 +132,8 @@ void lineEdit( int len, char ch, int cc, String hexStr ) {
 
 //
 // io redirection and cpu control cmd loop
+// This loop is used to perform basic io redirection, cpu control and toggle debugging functions on/off.
+// All other characters are forwarded to the lineEdit loop.
 //
 
 bool io2cli = true;
@@ -158,6 +163,15 @@ void ctrlLoop( int len, char ch, int cc, String hexStr ) {
     }
   }
 }
+
+//
+// ioLoop reads incoming characters from serial.  If it receives the ESC character, it tries to
+// see if it is the start of an ansi key definition, such as 1b5b44, left arrow.  If ansi end
+// character is received, it sends the entire ansi hex string to the ctrlLoop for further processing.
+// Otherwise, it sends a single character, including a lone ESC character, to the crtlLoop for processing.
+// I am not sure if this loop correctly captures all ansi keyboard characters, but it does capture the
+// ones in use by the cli at this point.
+//
 
 void ioLoop() {
   String ansiEnd = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz~";
