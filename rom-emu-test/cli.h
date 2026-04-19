@@ -5,6 +5,7 @@
 int delayTime = 0;
 bool fast = true;
 bool showState = false;
+bool showHex = false;
 
 String padLeft( String str, int width, char ch = ' ' ) {
   while ( str.length() < width ) {
@@ -23,27 +24,11 @@ String hex2( int v ) {
   return hex0( v, 2 );
 }
 
-char cmd[100];
-int cmdPos = 0;
-
-/*
-void doCmd( String cmd ) {
-  cmd = cmd.trim();
-  String p0 = "";
-  if ( p0 == "" ) {
-    //
-  } else if ( p0 == "" ) {
-    //
-  }
-}
-*/
-
 //
 // cmd line loop
 //
 
-void cmdLine( String cmd ) {
-  Serial.println();
+void cmdLine( char *cmd ) {
   Serial.print( cmd );
   Serial.print( " not recognized ... " );
   Serial.println( "No commands defined yet ..." );
@@ -53,32 +38,92 @@ void cmdLine( String cmd ) {
 // line editing loop
 //
 
-void lineEdit( int len, char ch, int cc, String hexStr ) {
-  if ( hexStr == "08" || hexStr == "7f" ) {
-    cmdPos--;
-    if ( cmdPos < 0 ) {
-      cmdPos = 0;
-    } else {
-      Serial.print( "" );
-      cmd[cmdPos] = '\0';
+const int cmdBufferLen = 101;
+char cmd[cmdBufferLen];
+int cmdPos = 0;
+int cmdEnd = 0;
+
+void cursorLeft() {
+  Serial.print( "\x1b[D" );
+}
+
+void cursorRight() {
+  Serial.print( "\x1b[C" );
+}
+
+void cursorSave() {
+  Serial.print( "\x1b[s" );
+}
+
+void cursorUnsave() {
+  Serial.print( "\x1b[u" );
+}
+
+void delStrChar( char* str, int index ) {
+  int len = strlen( cmd );
+  if ( index >= 0 && index < len ) {
+    for ( int i = index; i < len; i++ ) {
+      str[i] = str[i+1];
     }
-  } else if ( hexStr == "0d" ) {
+  }
+  str[len-1] = '\0';
+}
+
+void insStrChar( char* str, int index, char ch ) {
+  int len = strlen( cmd );
+  if ( ( len + 2 ) < cmdBufferLen && index < ( cmdBufferLen - 2 ) ) {
+    for ( int i = len; i >= index; i-- ) {
+      str[i+1] = str[i];
+    }
+    str[index] = ch;
+  }
+}
+
+void lineEdit( int len, char ch, int cc, String hexStr ) {
+  if ( hexStr == "0d" ) {  // Enter
+    Serial.println();
+    //Serial.println( strlen( cmd ) );
     cmdLine( cmd );
     cmdPos = 0;
     cmd[cmdPos] = '\0';
-    // Printable characters and not used
-  } else {
+  } else if ( hexStr == "7f" ) {  // Backspace
+    if ( cmdPos > 0 ) {
+      //String right = cmd.
+      cmdPos--;
+      delStrChar( cmd, cmdPos );
+      cursorLeft();
+      cursorSave();
+      Serial.print( cmd + cmdPos );
+      Serial.print( " " );
+      cursorUnsave();
+    }
+  } else if ( hexStr == "1b5b44" ) {  // Left Arrow
+    if ( cmdPos > 0 ) {
+      cmdPos--;
+      cursorLeft();
+    }
+  } else if ( hexStr == "1b5b43" ) {  // Right Arrow
+    if ( cmdPos < ( strlen( cmd ) ) ) {
+      cmdPos++;
+      cursorRight();
+    }
+  } else {  // Printable character
     if ( len == 1 ) {
       if ( cc >= 0x20 && cc <= 0x7e ) {
-        cmd[cmdPos++] = ch;
-        if ( cmdPos >= 100 ) {
-          cmdPos = 99;
+        if ( cmdPos > ( cmdBufferLen - 3 ) ) {
+          cmdPos = cmdBufferLen - 3;
+          cursorLeft();
+        }
+        if ( strlen( cmd ) < ( cmdBufferLen - 2 ) ) {
+          insStrChar( cmd, cmdPos++, ch );
+          Serial.print( ch );
+          cursorSave();
+          Serial.print( cmd + cmdPos );
+          cursorUnsave();
         }
       }
     }
   }
-  Serial.print( "\r" );
-  Serial.print( cmd );
 }
 
 //
@@ -102,6 +147,8 @@ void ctrlLoop( int len, char ch, int cc, String hexStr ) {
     if ( fast ) {
       delayTime = 0;
     }
+  } else if ( hexStr == "1a" ) {  // ctrl-z
+    showHex = ! showHex;
   } else {
     if ( io2cli ) {
       lineEdit( len, ch, cc, hexStr );
@@ -118,30 +165,31 @@ void ioLoop() {
     char ch;
     int cc;
     String hx;
-    bool ansi = false;
     String hexStr = "";
-    bool cont = true;
-    while ( cont ) {
+    bool ansi = false;
+    unsigned long end = 0;
+    unsigned long timeout = 10000;
+    do {
       ch = Serial.read();
-      cc = (int)ch;
-      hx = hex2( cc );
-      hexStr += hx;
-      len++;
-      if ( cc == 0x1b ) {
-        ansi = true;
-        cont = true;
-      }
-      if ( ansi ) {
+      if ( ch != 0xff ) {
+        cc = (int)ch;
+        hx = hex2( cc );
+        hexStr += hx;
+        len++;
+        if ( cc == 0x1b ) {
+          ansi = true;
+          end = micros() + timeout;
+        }
         if ( ansiEnd.indexOf( ch ) != -1 ) {
           ansi = false;
-          cont = false;
         }
-      } else {
-        cont = false;
       }
-    }
+      if ( micros() > end ) {
+        ansi = false;
+      }
+    } while ( ansi );
+    if ( showHex ) Serial.println( hexStr );
     ctrlLoop( len, ch, cc, hexStr );
   }
-
 }
 

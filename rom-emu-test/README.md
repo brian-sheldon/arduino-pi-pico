@@ -8,7 +8,15 @@
 - PageUp   Redirects keyboard io to the cpu io queue, NOT YET IMPLEMENTED
 - PageDown Redirects keyboard io to the cli
 
-I am basically copying the cli I built in Javascript in my emu-sys-js project.  Although, I am already making improvements to the structure as each time I write this, I think of a better way of doing it.
+A minimal cli line editor exists supporting the following keys.  Added a timeout in the ansi character loop to ensure it completes in case of an unrecognized ansi string or an ESC key not meant as a start of an ansi code.
+
+- Enter       Sends cmd buffer to cmdLine for processing
+- Backspace   Does what a backspace normall does
+- Left Arrow  Move cursor left
+- Right Arrow Moves cursor right
+- Printable characters are send to screen
+
+I am basically copying the cli I built in Javascript in my emu-sys-js project.  Although, I am already making improvements to the structure as each time I write this, I think of a better way of doing it.  Not complete or well tested yet.
 
 ### Speed 5.40 Mhz, restructured emulation loop, now has hooks for io requests that current do nothing, have added speed control by using the fast loop with a loop count of 1, so it only runs one time and then returns to loop1, where a delay can be used to slow it down.
 
