@@ -1,6 +1,7 @@
 
-
-
+// Copyright (C) 2026 Brian Sheldon
+//
+// MIT License
 
 int delayTime = 0;
 bool fast = true;
