@@ -3,8 +3,9 @@
 
 ## Current Status:  Started to write a cli that runs via a serial terminal.  No commands yet, but a few control keys are defined as follows.
 
-- ctrl-s   Turns on/off a repeating display of the last mhz, addr, data values
+- ctrl-s   Toggle repeating display of the last mhz, addr, data values
 - ctrl-f   Switchs from fast to slow cpu clock
+- ctrl-z   Toggle display of keypress in hex, ie, left arrow is 1b5b44
 - PageUp   Redirects keyboard io to the cpu io queue, NOT YET IMPLEMENTED
 - PageDown Redirects keyboard io to the cli
 
