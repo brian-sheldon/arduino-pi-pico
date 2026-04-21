@@ -50,4 +50,7 @@ The setup is using a Raspberry Pi Pico 2 W connected to a Z80 cpu.  The pins are
 
 I uploaded the original python version of this.  Not much time was put into it, I basically got it working and wanted to try an Arduino version.  The python and the arduino versions were all done yesterday with a few minor changes today, so I haven't put any time into refining the code.
 
+I am also going to be testing a z80 with the Fire 28 One Rom by Piers Rocks.  The breadboard wiring of the one rom to the z80 is complete, white wires 16 address lines, yellow wires 8 data lines, green wire clock line, red wires 5 volts, black wires grounds.  Note, 4 of the red wires are there to set the int, nmi, busrq and wait lines high.  Reset will also be set high with a resister as it needs to be pulled low at times.  Still need some logic for the mreq, rd and wr (if one rom is emulating a ram), to control the one rom ce pin and vpp pin if emulating ram.  This configuration is using one rom as a 27512 rom.  Not a very useful circuit as it has no peripherals at the moment.
+
+![breadboard.onerom.jpg](breadboard.onerom.jpg)
 
