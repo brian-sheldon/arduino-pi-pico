@@ -25,14 +25,58 @@ String hex2( int v ) {
   return hex0( v, 2 );
 }
 
+String hex4( int v ) {
+  return hex0( v, 4 );
+}
+
+String ascLine( byte* data, int pos, int cols ) {
+  String line = "";
+  for ( int i = 0; i < cols; i++ ) {
+    char ch = data[pos+i];
+    int cc = (int)ch;
+    if ( cc >= 0x20 && cc <= 0x7e ) {
+      line += ch;
+    } else {
+      line += '.';
+    }
+  }
+  return line;
+}
+
+String hexLine( byte* data, int pos, int cols ) {
+  String line = "";
+  for ( int i = 0; i < cols; i++ ) {
+    line += hex2( data[pos+i] );
+    if ( ( i % 2 ) == 1 ) line += " ";
+  }
+  return line;
+}
+
+String hexLines( int addr, byte* data, int pos, int rows, int cols ) {
+  String lf = "\r\n";
+  String lines = "";
+  for ( int row = 0; row < rows; row++ ) {
+    if ( row != 0 ) lines += lf;
+    lines += hex4( addr ) + "  " + hexLine( data, pos, cols ) + "  " + ascLine( data, pos, cols );
+    addr += cols;
+    pos += cols;
+  }
+  return lines;
+}
+
 //
 // cmd line loop
 //
 
-void cmdLine( char *cmd ) {
-  Serial.print( cmd );
-  Serial.print( " not recognized ... " );
-  Serial.println( "No commands defined yet ..." );
+void cmdLine( String cmd ) {
+  
+  if ( cmd == "d" ) {
+    Serial.println( hexLines( 0, rom, 0, 16, 16 ) );
+  } else {
+    Serial.print( "[" );
+    Serial.print( cmd );
+    Serial.println( "] not recognized ... " );
+  }
 }
 
 //
@@ -131,12 +175,45 @@ void lineEdit( int len, char ch, int cc, String hexStr ) {
 }
 
 //
+// A loop to receive hex data
+//
+// to be implemented
+//
+
+unsigned long rcvHexBeg = 0;
+unsigned long rcvHexTimeout = 10000000;
+
+int rcvHexCount = 0;
+
+bool rcvHex = false;
+
+void rcvHexLoop( char ch ) {
+  if ( micros() > ( rcvHexBeg + rcvHexTimeout ) ) {
+    rcvHex = false;
+    Serial.println();
+    Serial.print( "Receive Hex data timeout ..." );
+  } else if ( ch == '.' ) {
+    rcvHex = false;
+    Serial.println();
+    Serial.print( "Hex Bytes received: " );
+    Serial.println( rcvHexCount / 2 );
+  } else {
+    rcvHexBeg = micros();
+    if ( ( rcvHexCount++ % 64 ) == 0 ) {
+      Serial.println();
+    }
+    Serial.print( ch );
+  }
+}
+
+//
 // io redirection and cpu control cmd loop
 // This loop is used to perform basic io redirection, cpu control and toggle debugging functions on/off.
 // All other characters are forwarded to the lineEdit loop.
 //
 
 bool io2cli = true;
+
 
 void ctrlLoop( int len, char ch, int cc, String hexStr ) {
   if ( hexStr == "1b5b357e" ) {         // PageUp
@@ -145,6 +222,10 @@ void ctrlLoop( int len, char ch, int cc, String hexStr ) {
   } else if ( hexStr == "1b5b367e" ) {  // PageDown
     Serial.println( "io directed to cli ..." );
     io2cli = true;
+  } else if ( hexStr == "1b5b34333231307e" || hexStr == "18" ) {  // 4 3 2 1 0 switch to hex mode
+    rcvHex = true;
+    Serial.println( "Waiting for Hex data ..." );
+    rcvHexBeg = micros();
   } else if ( hexStr == "13" ) {
     showState = ! showState;
   } else if ( hexStr == "06" ) {
@@ -156,7 +237,9 @@ void ctrlLoop( int len, char ch, int cc, String hexStr ) {
   } else if ( hexStr == "1a" ) {  // ctrl-z
     showHex = ! showHex;
   } else {
-    if ( io2cli ) {
+    if ( rcvHex ) {
+      rcvHexLoop( ch );
+    } else if ( io2cli ) {
       lineEdit( len, ch, cc, hexStr );
     } else {
       // io2cpu queue
