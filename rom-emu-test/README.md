@@ -54,3 +54,26 @@ I am also going to be testing a z80 with the Fire 28 One Rom by Piers Rocks.  Th
 
 ![breadboard.onerom.jpg](breadboard.onerom.jpg)
 
+My initial thoughts on the logic between the z80 and the one rom, but leave out the wr for now.
+
+```
+mreq --+
+   nor |----+         will be high whenever mreq + rd are both low
+rd   --+    |
+        nor |---->    to cs on one rom, will be low whenever either are high, thus selecting one rom
+mreq --+    |
+   nor |----+         will be high whenever mreq + rd are both high
+wr   --+
+
+rd   --> inverter --> to oe on one rom, will be high whenever rd is high
+
+wr                    not needed for writing the rd pin is always high during a write and the cs pin will indicate a request,
+                      which if not rd must be a wr.
+```
+
+Then will need external power for the z80 as the one rom Vcc is in only I believe, as it should be.
+
+Also need a clock generator, probably will just generate one using another pi pico.
+
+As to seeing what is actually going on, I will have to see what I can monitor using the one rom tools.  I am thinking I will be an 8 bit buffer connected to the data pins and the iorq + wr pin with no address decoding.  Then I can use the out instruction to write an 8 bit status to know what the z80 is doing.
+

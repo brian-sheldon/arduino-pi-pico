@@ -101,6 +101,48 @@ data   ------|                         |-
 
 Control Decoding Logic
 
+These are the 5 combinations of rd/wr.
+
+mreg + rfsh
+
+mreq + rd
+mreq + wr
+
+iorq + rd
+iorq + wr
+
+So to ignore all but the mreq rd/wr, the following logic would work.
+
+  nor gate
+mreq rd
+ 0    0    1
+ 0    1    0
+ 1    0    0
+ 1    0    0
+           |
+           +--+
+              |      cs
+              0   0   1
+              0   1   0  enables one rom
+              1   0   0  enables one rom
+              1   1   0  never happens
+                  |
+  nor gate +------+
+mreq wr    |
+ 0    0    1
+ 0    1    0
+ 1    0    0
+ 1    0    0
+
+inverter
+rd   oe
+ 0    1 one rom will enable output buffer so cpu can read rom
+ 1    0
+
+note: oe will also go high during an input function, but the chip will not be enabled.
+
+
+
 Goal is to allow the pico to emulate ram, rom, io.  This would require the mreq, iorq, rd, wr signals, which is 4 inputs.  To save one input, the mreq and iorq can be combined with for example low meaning mreg and high meaning iorq.  Then when the pico detects a low on either rd or wr, it checks the combined signal to see if it should do a mreq or iorq.
 
 mreq and rd or mreq and wr
@@ -180,5 +222,17 @@ List of my chip inventory
 - 2 x 74hc164 8-bit serial-in/parallel-out shift register 2v to 6v
 - 2 x 74hc165 8-bit parallel-in/serial-out shift register 2v to 6v
 - 2 x 74hc595 8-bit serial-in/parallel-out chainable shift register 2v to 6v
+
+List of various chips that can be ordered in sets
+
+- 74hc173
+- 74hc191
+- 74hc192
+- 74hc194
+- 74hc238
+- 74hc244  buffer
+-*74hc245 
+
+
 
 
