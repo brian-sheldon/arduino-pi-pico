@@ -72,6 +72,11 @@ void cmdLine( String cmd ) {
   
   if ( cmd == "d" ) {
     Serial.println( hexLines( 0, rom, 0, 16, 16 ) );
+  } else if ( cmd == "s" ) {
+    Serial.print( "processingRequest: " );
+    Serial.print( processingRequest );
+    Serial.print( " fastLoops: " );
+;   Serial.println( fastLoops );
   } else {
     Serial.print( "[" );
     Serial.print( cmd );

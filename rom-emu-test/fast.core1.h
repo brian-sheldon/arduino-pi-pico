@@ -154,9 +154,11 @@ void output( int port, int data );
 //
 
 int reqId = 0;
-
+int fastLoops = 0;
+bool processingRequest = false;
 void __not_in_flash_func( fast_core1_loop )( int loops ) {
-  bool processingRequest = false;
+  fastLoops++;
+  //bool processingRequest = false;
   while ( loops-- > 0 ) {
     // Clock is always high at this point high
     int all = gpio_get_all();
@@ -212,10 +214,10 @@ void __not_in_flash_func( fast_core1_loop )( int loops ) {
         }
       }
     } else {
-      if ( processingRequest ) {
+      //if ( processingRequest ) {
         processingRequest = false;
         gpio_set_dir_in_masked( dataPinMask );
-      }
+      //}
     }
     //
     // set clock low
