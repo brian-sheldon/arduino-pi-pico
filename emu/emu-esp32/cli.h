@@ -4,6 +4,7 @@
 // MIT License
 
 #include "emu.fs.h"
+#include "emu.h"
 
 #include <tuple>
 
@@ -89,20 +90,7 @@ String hexLines( int addr, uint8_t *data, int pos, int rows, int cols ) {
 
 //string status();
 
-int drv = 0;
-int drvs[] = {0,1,2,3,4,5,6,7,8,9};
-EmuDiskImg imgs[] = {
-  EmuDiskImg( "/emu/disks/cpm22-1.dsk" ),
-  EmuDiskImg( "/emu/disks/cpm22-2.dsk" ),
-  EmuDiskImg( "/emu/disks/8080tools.cpm" ),
-  EmuDiskImg( "/emu/disks/trek.cpm" ),
-  EmuDiskImg( "" ),
-  EmuDiskImg( "" ),
-  EmuDiskImg( "" ),
-  EmuDiskImg( "" ),
-  EmuDiskImg( "" ),
-  EmuDiskImg( "" )
-};
+int dumpaddr = 0;
 
 String defcmd = "";
 void cmdLine( String cmd ) {
@@ -156,41 +144,84 @@ void cmdLine( String cmd ) {
   }
 
   if ( p0 == "off" || p0 == "1b5b347e" ) {
+    //
+    // off
+    //
     Serial.println( "Cpu running: false" );
     running = false;
   } else if ( p0 == "on" || p0 == "1b5b317e" ) {
+    //
+    // on
+    //
     Serial.println( "Cpu running: true" );
     running = true;
+  } else if ( p0 == "pc" ) {
+    if ( p1 != "" ) {
+      cpu.pc = p1.toInt() & 0xffff;
+    }
+  } else if ( p0 == "step" ) {
+    int steps = 1;
+    int ticks = 0;
+    if ( p1 != "" ) {
+      steps = p1.toInt();
+    }
+    while ( steps-- > 0 ) {
+      ticks += z80_step(&cpu);
+    }
+    Serial.print( "pc: " );
+    Serial.print( cpu.pc );
+    Serial.print( " ticks: " );
+    Serial.println( ticks );
+    defcmd = p0;
   } else if ( p0 == "d" ) {
-    int addr = 0;
+    //
+    // d
+    //
+    int addr = dumpaddr;
     if ( p1 != "" ) {
       addr = p1.toInt();
     }
     Serial.println( hexLines( addr, mem, addr, 16, 16 ) );
+    dumpaddr = addr + 256;
+    defcmd = p0;
   } else if ( p0 == "mhz" ) {
     Serial.println( mhz );
   } else if ( p0 == "ls" ) {
+    //
+    // ls
+    //
     EmuFileUtil fsutil;
     if ( p1 == "" ) {
       p1 = "/emu/disks";
     }
     fsutil.ls( p1 );
   } else if ( p0 == "rm" ) {
+    //
+    // rm
+    //
     EmuFileUtil fsutil;
     fsutil.rm( "/emu/disks/cpm22-1.tst" );
   } else if ( p0 == "cp" ) {
+    //
+    // cp
+    //
     EmuFileUtil fsutil;
     fsutil.cp( "/emu/disks/cpm22-1.dsk", "/emu/disks/cpm22-1.tst" );
   } else if ( p0 == "cmp" ) {
+    //
+    // cmp
+    //
     EmuFileUtil fsutil;
     fsutil.cmp( "/emu/disks/cpm22-1.dsk", "/emu/disks/cpm22-1.tst" );
   } else if ( p0 == "b" ) {
-    EmuFile file = EmuFile( "/emu/disks/cpm22-1.tst" );
-    file.open();
-    file.seek(0);
-    file.read( mem + 128, 128 );
-    file.close();
+    //
+    // b
+    //
+    imgs[drvs[0]].readsec( mem, 0, 0, 1 );
   } else if ( p0 == "drv" ) {
+    //
+    // drv
+    //
     if ( p1 != "" ) {
       drv = p1.toInt();
     }
@@ -201,6 +232,9 @@ void cmdLine( String cmd ) {
     Serial.print( "drv: " );
     Serial.println( drv );
   } else if ( p0 == "disk" ) {
+    //
+    // disk
+    //
     defcmd = p0;
     int track = -1;
     int sector = -1;
@@ -214,6 +248,9 @@ void cmdLine( String cmd ) {
     imgs[drv].readsec( buffer, 0, track, sector );
     Serial.println( hexLines( 0, buffer, 0, 8, 16 ) );
   } else if ( p0 == "drvs" ) {
+    //
+    // drvs
+    //
     for ( int i = 0; i < 10; i++ ) {
       Serial.print( "drv: " );
       Serial.print( i );
@@ -223,6 +260,9 @@ void cmdLine( String cmd ) {
       Serial.println( imgs[drvs[i]].getPath() );
     }
   } else if ( p0 == "imgs" ) {
+    //
+    // imgs
+    //
     for ( int i = 0; i < 10; i++ ) {
       Serial.print( "drv: " );
       Serial.print( drvs[i] );
@@ -232,6 +272,9 @@ void cmdLine( String cmd ) {
       Serial.println( imgs[i].getPath() );
     }
   } else if ( p0 == "img" ) {
+    //
+    // img
+    //
     int i = drv;
     if ( p1 != "" ) {
       i = p1.toInt();
@@ -244,6 +287,9 @@ void cmdLine( String cmd ) {
     Serial.print( " path: " );
     Serial.println( imgs[i].getPath() );
   } else if ( p0 == "blksec" ) {
+    //
+    // blksec
+    //
     int blk, blksec;
     int trk, log, sec;
     if ( p1 != 0 ) {
@@ -264,6 +310,9 @@ void cmdLine( String cmd ) {
       }
     }
   } else if ( p0 == "trksec" ) {
+    //
+    // trksec
+    //
     int blk, blksec;
     int trk, log, sec;
     if ( p1 != 0 ) {
@@ -459,7 +508,9 @@ void ctrlLoop( int len, char ch, int cc, String hexStr ) {
     } else if ( io2cli ) {
       lineEdit( len, ch, cc, hexStr );
     } else {
-      // io2cpu queue
+      if ( queuePos < queueSize ) {
+        queue[queuePos++] = ch;
+      }
     }
   }
 }

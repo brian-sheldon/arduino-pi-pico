@@ -349,6 +349,7 @@ class EmuDiskImg {
       } else {
         sector = this->translate( logical );
       }
+      /*
       Serial.print( "img path: " );
       Serial.println( this->path );
       Serial.print( "readSector track: " );
@@ -357,8 +358,9 @@ class EmuDiskImg {
       Serial.print( logical );
       Serial.print( " sector: " );
       Serial.println( sector );
+      */
       this->file.open();
-      this->seek( track, sector );
+      this->seek( track, logical );
       this->file.read( buffer + addr, this->secsize );
       this->file.close();
       this->next();

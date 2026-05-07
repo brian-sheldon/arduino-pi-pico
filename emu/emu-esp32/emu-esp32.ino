@@ -1,7 +1,6 @@
 
 #include "M5Cardputer.h"
 
-#include "emu.h"
 #include "cli.h"
 
 void setup() {

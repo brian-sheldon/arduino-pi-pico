@@ -4,8 +4,30 @@ extern "C" {
 
 static Z80 cpu;
 
+bool running = false;
+bool iowait = false;
+
 byte mem[65536];
 byte ports[256];
+
+const int queueSize = 256;
+int queuePos = 0;
+char queue[queueSize];
+
+int drv = 0;
+int drvs[] = {0,1,2,3,4,5,6,7,8,9};
+EmuDiskImg imgs[] = {
+  EmuDiskImg( "/emu/disks/cpm22-1.dsk" ),
+  EmuDiskImg( "/emu/disks/cpm22-2.dsk" ),
+  EmuDiskImg( "/emu/disks/8080tools.cpm" ),
+  EmuDiskImg( "/emu/disks/trek.cpm" ),
+  EmuDiskImg( "" ),
+  EmuDiskImg( "" ),
+  EmuDiskImg( "" ),
+  EmuDiskImg( "" ),
+  EmuDiskImg( "" ),
+  EmuDiskImg( "" )
+};
 
 struct EmuDrive {
   int sides = 1;
@@ -33,11 +55,30 @@ void mem_write( void *ctx, uint16_t addr, uint8_t val ) {
 
 uint8_t io_read( void *ctx, uint16_t port ) {
   (void)ctx;
+  //Serial.print( "io_read port: " );
+  //Serial.println( port );
+  char ch;
   switch ( port ) {
     case 0: // console status input available 0xff input not 0x00
+      if ( queuePos > 0 ) {
+        return 0xff;
+      } else {
+        return 0x00;
+      }
       break;
-    case 1:
-      break; // console input
+    case 1: // console input
+      if ( queuePos > 0 ) {
+        ch = queue[0];
+        for ( int i = 1; i < queuePos; i++ ) {
+          queue[i-1] = queue[i];
+        }
+        queuePos--;
+        return (int)ch;
+      } else {
+        iowait = true;
+        return 0xff;
+      }
+      break;
     case 2:
       return 0xff;
       break;
@@ -59,6 +100,7 @@ uint8_t io_read( void *ctx, uint16_t port ) {
     case 13: // FDC command IO ready?
       break;
     case 14: // FDC status
+      return 0;
       break;
     case 15: // FDC DMA low
       return drive.dmalow;
@@ -76,8 +118,15 @@ uint8_t io_read( void *ctx, uint16_t port ) {
 }
 
 void io_write( void *ctx, uint16_t port, uint8_t val ) {
+  port = port & 0xff;
+  //Serial.print( "io_write port: " );
+  //Serial.print( port );
+  //Serial.print( " val: " );
+  //Serial.println( val );
+  int status, addr;
   switch ( port & 0xff ) {
     case 1:
+      Serial.print( (char)val );
       break;
     case 10: // FDC drive
       drive.drv = val;
@@ -87,6 +136,15 @@ void io_write( void *ctx, uint16_t port, uint8_t val ) {
       break;
     case 12: // FDC sector
       drive.sector = val;
+      break;
+    case 13: // FDC cmd
+      status = 0;
+      addr = drive.dmahigh * 256 + drive.dmalow;
+      if ( val == 0 ) {
+        imgs[drvs[drive.drv]].readsec( mem, addr, drive.track, drive.sector );
+      } else {
+        //imgs[drvs[drive.drv]].writesec( mem, addr, drive.track, drive.sector );
+      }
       break;
     case 15:
       drive.dmalow = val;
@@ -167,7 +225,6 @@ void setupEmu() {
 unsigned long lastTime = 0;
 long long lastTicks = 0;
 float mhz = 0.0;
-bool running = false;
 
 String status() {
   String s = "";
@@ -180,8 +237,19 @@ String status() {
 
 void loopEmu() {
   int loops = 10000;
-  if ( running ) {
-    while ( loops-- > 0 ) {
+  while ( loops-- > 0 ) {
+    if ( iowait ) {
+      if ( queuePos > 0 ) {
+        char ch = queue[0];
+        for ( int i = 0; i < queuePos; i++ ) {
+          queue[i-1] = queue[i];
+        }
+        queuePos--;
+        cpu.a = (int)ch & 0xff;
+        iowait = false;
+      }
+    }
+    if ( running && ! iowait ) {
       ticks += z80_step(&cpu);
     }
   }
