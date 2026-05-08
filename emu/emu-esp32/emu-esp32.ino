@@ -1,6 +1,7 @@
 
 #include "M5Cardputer.h"
 
+#include "emu.cmd.main.h"
 #include "cli.h"
 
 void setup() {
@@ -18,6 +19,8 @@ void setup() {
   setupFs();
 
   setupEmu();
+  
+  setupCmd();
 
   cliSetup();
 }
