@@ -18,6 +18,8 @@ void setup() {
   setupFs();
 
   setupEmu();
+
+  cliSetup();
 }
 
 void loop() {

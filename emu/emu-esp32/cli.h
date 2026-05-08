@@ -13,6 +13,32 @@ bool fast = true;
 bool showState = false;
 bool showHex = false;
 
+void print( String s = "" ) {
+  Serial.print( s );
+}
+
+void print( int v ) {
+  print( String( v ) );
+}
+
+void println( String s = "" ) {
+  print( s + "\r\n" );
+}
+
+void println( int v ) {
+  println( String( v ) );
+}
+
+void doPrompt() {
+  print( "\x1b[1;31m>>> \x1b[1;32m" );
+}
+
+void cliSetup() {
+  println();
+  println( "Monitor" );
+  doPrompt();
+}
+
 std::string trim( std::string str ) {
   const std::string whitespace = " \t\n\r\f\v";
   size_t start = str.find_first_not_of( whitespace );
@@ -147,13 +173,13 @@ void cmdLine( String cmd ) {
     //
     // off
     //
-    Serial.println( "Cpu running: false" );
+    println( "Cpu running: false" );
     running = false;
   } else if ( p0 == "on" || p0 == "1b5b317e" ) {
     //
     // on
     //
-    Serial.println( "Cpu running: true" );
+    println( "Cpu running: true" );
     running = true;
   } else if ( p0 == "pc" ) {
     if ( p1 != "" ) {
@@ -168,10 +194,10 @@ void cmdLine( String cmd ) {
     while ( steps-- > 0 ) {
       ticks += z80_step(&cpu);
     }
-    Serial.print( "pc: " );
-    Serial.print( cpu.pc );
-    Serial.print( " ticks: " );
-    Serial.println( ticks );
+    print( "pc: " );
+    print( cpu.pc );
+    print( " ticks: " );
+    println( ticks );
     defcmd = p0;
   } else if ( p0 == "d" ) {
     //
@@ -237,16 +263,17 @@ void cmdLine( String cmd ) {
     //
     defcmd = p0;
     int track = -1;
-    int sector = -1;
+    int logical = -1;
     if ( p1 != "" ) {
       track = p1.toInt();
     }
     if ( p2 != "" ) {
-      sector = p2.toInt();
+      logical = p2.toInt();
     }
     uint8_t buffer[128];
-    imgs[drv].readsec( buffer, 0, track, sector );
-    Serial.println( hexLines( 0, buffer, 0, 8, 16 ) );
+    imgs[drv].readsec( buffer, 0, track, logical );
+    println( imgs[drv].secinfo( drv, track, logical ) );
+    println( hexLines( 0, buffer, 0, 8, 16 ) );
   } else if ( p0 == "drvs" ) {
     //
     // drvs
@@ -389,11 +416,12 @@ void insStrChar( char* str, int index, char ch ) {
 
 void lineEdit( int len, char ch, int cc, String hexStr ) {
   if ( hexStr == "0d" ) {  // Enter
-    Serial.println();
+    println();
     //Serial.println( strlen( cmd ) );
     cmdLine( cmd );
     cmdPos = 0;
     cmd[cmdPos] = '\0';
+    doPrompt();
   } else if ( hexStr == "7f" ) {  // Backspace
     if ( cmdPos > 0 ) {
       //String right = cmd.
@@ -509,6 +537,9 @@ void ctrlLoop( int len, char ch, int cc, String hexStr ) {
       lineEdit( len, ch, cc, hexStr );
     } else {
       if ( queuePos < queueSize ) {
+        if ( cc == 3 ) {
+          //println( "ctrl-c send to system ..." );
+        }
         queue[queuePos++] = ch;
       }
     }

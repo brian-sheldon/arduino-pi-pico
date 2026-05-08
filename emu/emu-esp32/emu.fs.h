@@ -331,6 +331,35 @@ class EmuDiskImg {
     void seek( int track, int sector ) {
       this->file.seek( this->pos( track, sector ) );
     }
+    String secinfo( int drv, int track = -1, int logical = -1 ) {
+      if ( track < 0 ) {
+        track = this->track;
+      }
+      if ( logical < 0 ) {
+        logical = this->logical;
+      }
+      //int sector, blk, blksec;
+      auto [ sector, blk, blksec ] = this->trksec( track, logical );
+      String info = "\x1b[1;33m";
+      info += "path: " + this->path;
+      info += "\r\n";
+      info += "drv: " + String( drv );
+      info += "  trk: " + String( track );
+      info += "  log: " + String( logical );
+      info += "  sec: " + String( sector );
+      info += "\r\n";
+      if ( track < this->blktrk ) {
+        info += "blk: --:--";
+      } else {
+        info += "blk: " + String( blk );
+        info += ":" + String( blksec );
+      }
+      info += "  op: read";
+      info += "  size: " + String( this->secsize );
+      info += "  chksum: --";
+      info += "\x1b[1;32m";
+      return info;
+    }
     void readsec( uint8_t *buffer, int addr, int track = -1, int logical = -1 ) {
       if ( track < 0 ) {
         track = this->track;
