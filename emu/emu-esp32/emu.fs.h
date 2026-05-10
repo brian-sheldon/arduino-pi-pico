@@ -351,27 +351,59 @@ class EmuDiskImg {
       }
       //int sector, blk, blksec;
       auto [ sector, blk, blksec ] = this->trksec( track, logical );
-      String info = "\x1b[1;33m";
-      info += "path: " + this->path;
+      String info = "";
+      info += colors[color].dump_label;
+      info += "path: ";
+      info += colors[color].dump_value;
+      info += this->path;
       info += "\r\n";
-      info += "drv: " + String( drv );
-      info += "  trk: " + String( track );
-      info += "  log: " + String( logical );
-      info += "  sec: " + String( sector );
+      info += colors[color].dump_label;
+      info += "drv: ";
+      info += colors[color].dump_value;
+      info += String( drv );
+      info += colors[color].dump_label;
+      info += "  trk: ";
+      info += colors[color].dump_value;
+      info += String( track );
+      info += colors[color].dump_label;
+      info += "  log: ";
+      info += colors[color].dump_value;
+      info += String( logical );
+      info += colors[color].dump_label;
+      info += "  sec: ";
+      info += colors[color].dump_value;
+      info += String( sector );
       info += "\r\n";
+      info += colors[color].dump_label;
+      info += "blk: ";
+      info += colors[color].dump_value;
       if ( track < this->blktrk ) {
-        info += "blk: --:--";
+        info += "--:--";
       } else {
-        info += "blk: " + String( blk );
+        info += String( blk );
         info += ":" + String( blksec );
       }
-      info += "  op: read";
-      info += "  size: " + String( this->secsize );
-      info += "  chksum: --";
-      info += "\x1b[1;32m";
+      info += colors[color].dump_label;
+      info += "  op: ";
+      info += colors[color].dump_value;
+      info += "read";
+      info += colors[color].dump_label;
+      info += "  size: ";
+      info += colors[color].dump_value;
+      info += String( this->secsize );
+      info += colors[color].dump_label;
+      info += "  chksum: ";
+      info += colors[color].dump_value;
+      info += "---";
       return info;
     }
-    void readsec( uint8_t *buffer, int addr, int track = -1, int logical = -1 ) {
+    void readsec( uint8_t *buffer, int addr, int track, int sector ) {
+      this->file.open();
+      this->seek( track, sector );
+      this->file.read( buffer + addr, this->secsize );
+      this->file.close();
+    }
+    void readlog( uint8_t *buffer, int addr, int track = -1, int logical = -1 ) {
       if ( track < 0 ) {
         track = this->track;
       } else {
@@ -389,21 +421,7 @@ class EmuDiskImg {
       } else {
         sector = this->translate( logical );
       }
-      /*
-      Serial.print( "img path: " );
-      Serial.println( this->path );
-      Serial.print( "readSector track: " );
-      Serial.print( track );
-      Serial.print( " logical: " );
-      Serial.print( logical );
-      Serial.print( " sector: " );
-      Serial.println( sector );
-      */
-      this->file.open();
-      this->seek( track, logical );
-      this->file.read( buffer + addr, this->secsize );
-      this->file.close();
-      this->next();
+      this->readsec( buffer, addr, track, sector );
     }
     void writesec( uint8_t *buffer, int addr, int track, int sector ) {
       this->file.open();

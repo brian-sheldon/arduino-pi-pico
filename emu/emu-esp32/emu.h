@@ -15,7 +15,7 @@ const int queueSize = 256;
 int queuePos = 0;
 char queue[queueSize];
 
-int drv = 0;
+//int drv = 0;
 int drvs[] = {0,1,2,3,4,5,6,7,8,9};
 EmuDiskImg imgs[] = {
   EmuDiskImg( "/emu/disks/cpm22-1.dsk" ),

@@ -104,9 +104,9 @@ String hexLines( int addr, uint8_t *data, int pos, int rows, int cols ) {
   for ( int row = 0; row < rows; row++ ) {
     if ( row != 0 ) lines += lf;
     lines += colors[color].dump_addr;
-    lines += hex4( addr ) + "  ";
+    lines += hex4( addr ) + " ";
     lines += colors[color].dump_hex;
-    lines += hexLine( data, pos, cols ) + "  ";
+    lines += hexLine( data, pos, cols ) + "";
     lines += colors[color].dump_asc;
     lines += ascLine( data, pos, cols );
     addr += cols;

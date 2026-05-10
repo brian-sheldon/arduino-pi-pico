@@ -66,9 +66,10 @@ static void disk_disk() {
     logical = dec2int( cmdline.p2 );
   }
   uint8_t buffer[128];
-  imgs[drv].readsec( buffer, 0, track, logical );
+  imgs[drv].readlog( buffer, 0, track, logical );
   println( imgs[drv].secinfo( drv, track, logical ) );
   println( hexLines( 0, buffer, 0, 8, 16 ) );
+  imgs[drv].next();
   //defcmd = p0;
 }
 

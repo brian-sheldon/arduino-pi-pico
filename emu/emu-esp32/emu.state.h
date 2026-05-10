@@ -11,4 +11,6 @@ bool showHex = false;
 bool running = false;
 bool iowait = false;
 
+int drv = 0;
+
 int dumpaddr = 0;
