@@ -14,6 +14,8 @@ So far, I added most of the essential commands from my nodeJS version.  I have a
 
 Note: I am running this with the M5Cardputer connected to a serial terminal over the USB connection.  I am not currently using the M5Cardputer's screen or keyboard, that will be in the future.
 
+And it even has some color when used with an ansi color terminal.
+
 ![m5cardputer.cpm.serial.png](img/m5cardputer.cpm.serial.png)
 
 ** Bugs and Issues
