@@ -1,6 +1,13 @@
 
+// Copyright (C) 2026 Brian Sheldon
+//
+// MIT License
+
 #include "M5Cardputer.h"
 
+#include "emu.cfg.h"
+#include "emu.util.h"
+#include "emu.state.h"
 #include "emu.cmd.main.h"
 #include "cli.h"
 
@@ -9,9 +16,9 @@ void setup() {
   M5Cardputer.begin(cfg);
   
   Serial.begin( 115200 );
-  delay( 200 );
+  delay( 2000 );
   
-  Serial.println( "Setup ..." );
+  Serial.println( "Starting ..." );
   
   M5.Display.setTextSize( 2 );
   M5.Display.print( "Starting ..." );

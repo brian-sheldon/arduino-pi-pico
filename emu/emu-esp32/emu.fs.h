@@ -53,11 +53,22 @@ class EmuFileUtil {
       File dir = SD.open( path );
       File next = dir.openNextFile();
       while ( next ) {
+        bool isDir = next.isDirectory();
         String name = next.name();
         unsigned long size = next.size();
-        Serial.print( name );
-        Serial.print( "  " );
-        Serial.println( size );
+        if ( isDir ) {
+          print( colors[color].ls_dir );
+        } else {
+          print( colors[color].ls_file );
+        }
+        if ( isDir ) print( "[" );
+        print( name );
+        if ( ! isDir ) {
+          print( "  " );
+          print( size );
+        }
+        if ( isDir ) print( "]" );
+        println();
         next.close();
         next = dir.openNextFile();
       }

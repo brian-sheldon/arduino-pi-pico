@@ -2,10 +2,11 @@ extern "C" {
   #include "z80.h"
 }
 
-static Z80 cpu;
+// Copyright (C) 2026 Brian Sheldon
+//
+// MIT License
 
-bool running = false;
-bool iowait = false;
+static Z80 cpu;
 
 byte mem[65536];
 byte ports[256];
