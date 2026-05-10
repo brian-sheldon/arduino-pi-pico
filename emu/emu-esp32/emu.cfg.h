@@ -13,6 +13,8 @@ struct Colors {
   char *dump_asc;
   char *dump_label;
   char *dump_value;
+  char *reg_label;
+  char *reg_value;
 };
 
 // 30 - black
@@ -26,7 +28,7 @@ struct Colors {
 
 int color = 1;
 Colors colors[] = {
-  {"","","","","","","","",""},
+  {"","","","","","","","","","",""},
   {
     "\x1b[0;32m",  // reset, cmdline
     "\x1b[0;31m",  // prompt
@@ -35,7 +37,9 @@ Colors colors[] = {
     "\x1b[0;34m",  // dump_addr
     "\x1b[0;36m",  // dump_hex
     "\x1b[0;37m",  // dump_asc
-    "\x1b[0;33m",  // dump_label
-    "\x1b[0;31m"   // dump_value
+    "\x1b[0;31m",  // dump_label
+    "\x1b[0;33m",  // dump_value
+    "\x1b[0;31m",  // reg_label
+    "\x1b[0;33m"   // reg_value
   }
 };
