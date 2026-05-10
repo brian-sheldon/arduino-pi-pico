@@ -1,4 +1,4 @@
-* Currently a CP/M emulator running on the M5Cardputer
+# Currently a CP/M emulator running on the M5Cardputer
 
 The code here is meant to be much more general in the future.  I choose this platform for the initial development as it uses a somewhat resource limited microprocessor, but at the same time, has a number of interesting hardware features such as the screen and keyboard.
 
@@ -6,7 +6,7 @@ This is part of my effort to improve some quick and dirty code I wrote a while b
 
 As I am also interested in running code on microcontrollers, I decided to rewrite this code in C, as a way to both update my C skills and redesign the structure of the code.  I decided to try and use as much non-C++ C code as possible as it can be more memory efficient, especially with string management.  I wrote a lot of C back over 35 years ago, but I have only recently began using C and C++ in the Arduino platform.
 
-** Status
+## Status
 
 I am particularly happy with the new design for how the command line interface.  It keeps the code fairly easy to read, makes it convenient for providing a basic list of commands and also a basic help for each one.  As the command table and the additional help is in the same table, there is guaranteed to be a list of all commands, even if the short arg list and help strings are not initially set.
 
@@ -18,11 +18,11 @@ And it even has some color when used with an ansi color terminal.
 
 ![m5cardputer.cpm.serial.png](img/m5cardputer.cpm.serial.png)
 
-** Bugs and Issues
+## Bugs and Issues
 
 I ran into a bug that caused a crash due to a variable that acts as an index representing the drive the command shell is currently working with.  This variable is not related to the drive that is currently configured within CP/M.  However, there was an issue whereby when I connected keyboard IO to the CP/M system and then went back to the command line monitor, this variable, drv, had somehow been corrupted.  I moved the location of the variable from emu.h to emu.state.h as that was where I intend it to be located.  The issue went away, but I still hope to move the variable back temporarily to try and find out why this was happening.
 
-** Running It
+## Running It
 
 The emu folder in this director needs to be placed on the SDcard in the M5Cardputer.  It currently has 4 CP/M disk images.  The CP/M ones are from the Z80pack github project with a few files added.
 
@@ -30,7 +30,7 @@ Then the arduino project needs to be built and loaded into the M5Cardputer.  Not
 
 At this point, a terminal app is required, such as Putty.  The serial monitor in the Arduino IDE has limited ability to work interactively.  Note: In order to connect another terminal, the serial monitor must not be connected.  Also, when loading the sketch from the Arduino IDE, the terminal program needs to be disconnected.
 
-** Some useful commands to run at the >>> prompt
+## Some useful commands to run at the >>> prompt
 
 Note:  The PageUp key connects the keyboard to CP/M.  PageDown connects the keyboard to the monitor command line.  When used, it will display a message that the IO was redirected.  The Star Trek that I ran is a modified version I created that allows it to be run on a screen with only 60 columns.  I did this as I initially wrote this emulation on my phone in javascript, so I could run it under nodeJS in Termux, took about 5 weeks for the initial nodeJS version.  This version does have a fair amount of additional functionality, but it was not well planned out, so the code is not as ideally organized as I would like.  Yes, I was crazy enough to write the first 5000 lines of javascript using the phones touch keyboard.  I am currently using a real keyboard and a large screen.
 
