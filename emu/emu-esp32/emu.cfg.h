@@ -28,14 +28,14 @@ int color = 1;
 Colors colors[] = {
   {"","","","","","","","",""},
   {
-    "\x1b[1;32m",  // reset, cmdline
-    "\x1b[1;31m",  // prompt
-    "\x1b[1;36m",  // ls_dir
-    "\x1b[1;33m",  // ls_file
-    "\x1b[1;34m",  // dump_addr
-    "\x1b[1;36m",  // dump_hex
-    "\x1b[1;37m",  // dump_asc
-    "\x1b[1;33m",  // dump_label
-    "\x1b[1;31m"   // dump_value
+    "\x1b[0;32m",  // reset, cmdline
+    "\x1b[0;31m",  // prompt
+    "\x1b[0;36m",  // ls_dir
+    "\x1b[0;33m",  // ls_file
+    "\x1b[0;34m",  // dump_addr
+    "\x1b[0;36m",  // dump_hex
+    "\x1b[0;37m",  // dump_asc
+    "\x1b[0;33m",  // dump_label
+    "\x1b[0;31m"   // dump_value
   }
 };
