@@ -27,7 +27,7 @@ static void disk_drvs() {
     print( " img: " );
     print( drvs[i] );
     print( " path: " );
-    println( imgs[drvs[i]].getPath() );
+    Serial.println( imgs[drvs[i]].getPath() );
   }
 }
 
@@ -42,7 +42,7 @@ static void disk_img() {
   print( "img: " );
   print( i );
   print( " path: " );
-  println( imgs[i].getPath() );
+  Serial.println( imgs[i].getPath() );
 }
 
 static void disk_imgs() {
@@ -52,7 +52,7 @@ static void disk_imgs() {
     print( " img: " );
     print( i );
     print( " path: " );
-    println( imgs[i].getPath() );
+    Serial.println( imgs[i].getPath() );
   }
 }
 
@@ -67,7 +67,7 @@ static void disk_disk() {
   }
   uint8_t buffer[128];
   imgs[drv].readlog( buffer, 0, track, logical );
-  println( imgs[drv].secinfo( drv, track, logical ) );
+  Serial.println( imgs[drv].secinfo( drv, track, logical ) );
   println( hexLines( 0, buffer, 0, 8, 16 ) );
   imgs[drv].next();
   //defcmd = p0;

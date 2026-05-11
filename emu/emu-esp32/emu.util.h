@@ -3,20 +3,30 @@
 //
 // MIT License
 
-void print( String s = "" ) {
-  Serial.print( s );
+#include <stdlib.h>
+
+void print( char *str ) {
+  //printf( "%s", str );
+  Serial.print( str );
 }
 
 void print( int v ) {
-  print( String( v ) );
+  //printf( "%d", v );
+  Serial.print( v );
 }
 
-void println( String s = "" ) {
-  print( s + "\r\n" );
+void println() {
+  print( "\n" );
+}
+
+void println( char *str ) {
+  print( str );
+  println();
 }
 
 void println( int v ) {
-  println( String( v ) );
+  print( v );
+  println();
 }
 
 int dec2int( char *str ) {
@@ -39,76 +49,64 @@ int hex2int( char *str ) {
   }
 }
 
-std::string trim( std::string str ) {
-  const std::string whitespace = " \t\n\r\f\v";
-  size_t start = str.find_first_not_of( whitespace );
-  if ( start != std::string::npos ) {
-    str.erase( 0, start );
-  } else {
-    str.clear();
-  }
-  size_t end = str.find_last_not_of( whitespace );
-  if ( end != std::string::npos ) {
-    str.erase( end + 1 );
-  }
-  return str;
+char *hex0( int v, int width = 0 ) {
+  static char buffer[ 20 ];
+  snprintf( buffer, sizeof( buffer ), "%0*x", width, v );
+  return buffer;
 }
 
-String padLeft( String str, int width, char ch = ' ' ) {
-  while ( str.length() < width ) {
-    str = ch + str;
-  }
-  return str;
-}
-
-String hex0( int v, int width = 0, char ch = '0' ) {
-  String hx = String( v, HEX );
-  hx = padLeft( hx, width, '0' );
-  return hx;
-}
-
-String hex2( int v ) {
+char *hex2( int v ) {
   return hex0( v, 2 );
 }
 
-String hex4( int v ) {
+char *hex4( int v ) {
   return hex0( v, 4 );
 }
 
-String ascLine( uint8_t *data, int pos, int cols ) {
-  String line = "";
-  for ( int i = 0; i < cols; i++ ) {
-    char ch = data[pos+i];
-    int cc = (int)ch;
-    if ( cc >= 0x20 && cc <= 0x7e ) {
-      line += ch;
-    } else {
-      line += '.';
+char *ascLine( uint8_t *data, int pos, int cols ) {
+  static char line[17];
+  line[0] = '\0';
+  if ( cols <= 16 ) {
+    for ( int i = 0; i < cols; i++ ) {
+      char ch = data[pos+i];
+      int cc = (int)ch;
+      if ( cc >= 0x20 && cc <= 0x7e ) {
+        line[i] = ch;
+      } else {
+        line[i] = '.';
+      }
+    }
+    line[ cols ] = '\0';
+  }
+  return line;
+}
+
+char *hexLine( uint8_t *data, int pos, int cols ) {
+  static char line[50];
+  line[0] = '\0';
+  if ( cols <= 16 ) {
+    for ( int i = 0; i < cols; i++ ) {
+      strcat( line, hex2( data[pos+i] ) );
+      if ( ( i % 2 ) == 1 ) strcat( line, " " );
     }
   }
   return line;
 }
 
-String hexLine( uint8_t *data, int pos, int cols ) {
-  String line = "";
-  for ( int i = 0; i < cols; i++ ) {
-    line += hex2( data[pos+i] );
-    if ( ( i % 2 ) == 1 ) line += " ";
-  }
-  return line;
-}
-
-String hexLines( int addr, uint8_t *data, int pos, int rows, int cols ) {
-  String lf = "\r\n";
-  String lines = "";
+char *hexLines( int addr, uint8_t *data, int pos, int rows, int cols ) {
+  char lf[] = "\r\n";
+  static char lines[1000];
+  lines[0] = '\0';
   for ( int row = 0; row < rows; row++ ) {
-    if ( row != 0 ) lines += lf;
-    lines += colors[color].dump_addr;
-    lines += hex4( addr ) + " ";
-    lines += colors[color].dump_hex;
-    lines += hexLine( data, pos, cols ) + "";
-    lines += colors[color].dump_asc;
-    lines += ascLine( data, pos, cols );
+    if ( row != 0 ) strcat( lines, lf );
+    strcat( lines, colors[color].dump_addr );
+    strcat( lines, hex4( addr ) );
+    strcat( lines, " " );
+    strcat( lines, colors[color].dump_hex );
+    strcat( lines, hexLine( data, pos, cols ) );
+    //strcat( lines, "" );
+    strcat( lines, colors[color].dump_asc );
+    strcat( lines, ascLine( data, pos, cols ) );
     addr += cols;
     pos += cols;
   }

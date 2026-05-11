@@ -62,7 +62,7 @@ class EmuFileUtil {
           print( colors[color].ls_file );
         }
         if ( isDir ) print( "[" );
-        print( name );
+        Serial.print( name );
         if ( ! isDir ) {
           print( "  " );
           print( size );
