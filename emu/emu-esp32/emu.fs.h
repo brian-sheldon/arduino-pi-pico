@@ -62,7 +62,7 @@ class EmuFileUtil {
           print( colors[color].ls_file );
         }
         if ( isDir ) print( "[" );
-        Serial.print( name );
+        print( name );
         if ( ! isDir ) {
           print( "  " );
           print( size );
@@ -95,18 +95,18 @@ class EmuFileUtil {
         while ( src.available() > 0 ) {
           size_t bytes = src.read( buffer, sizeof( buffer ) );
           dst.write( buffer, bytes );
-          Serial.print( "." );
+          print( "." );
           count++;
           if ( ( count % 64 ) == 0 ) {
-            Serial.println();
+            println();
           }
         }
         src.close();
         dst.close();
-        Serial.println();
-        Serial.println( "Copy complete ..." );
+        println();
+        println( "Copy complete ..." );
       } else {
-        Serial.println( "Error opening files ..." );
+        println( "Error opening files ..." );
       }
     }
     void cmp( String srcpath, String dstpath ) {
@@ -133,19 +133,19 @@ class EmuFileUtil {
           } else {
             res = false;
           }
-          Serial.print( "." );
+          print( "." );
           count++;
           if ( ( count % 64 ) == 0 ) {
-            Serial.println();
+            println();
           }
         }
         src0.close();
         src1.close();
-        Serial.println();
-        Serial.print( "Compare complete ... res: " );
-        Serial.println( res );
+        println();
+        print( "Compare complete ... res: " );
+        println( res );
       } else {
-        Serial.println( "Error opening files ..." );
+        println( "Error opening files ..." );
       }
     }
 };
@@ -435,10 +435,10 @@ class EmuDiskImg {
       file.open();
       file.read( data, 128 );
       for ( int i = 0; i < 128; i++ ) {
-        Serial.print( data[i] );
-        Serial.print( " " );
+        print( data[i] );
+        print( " " );
         if ( ( i % 8 ) == 0 ) {
-          Serial.println();
+          println();
         }
       }
       file.close();
@@ -448,13 +448,13 @@ class EmuDiskImg {
 
 void setupFs() {
   if (!SD.begin(GPIO_NUM_12, SPI, 40000000)) { // CS pin for Cardputer is GPIO 12
-    Serial.println( "SD Card failed !!!" );
+    println( "SD Card failed !!!" );
     return;
   } else {
-    Serial.println( "SD Card Success ..." );
-    Serial.print( "Total space: " );
-    Serial.println( SD.totalBytes() / (1024 * 1024) );
-    Serial.print( "Used space: " );
+    println( "SD Card Success ..." );
+    print( "Total space: " );
+    println( SD.totalBytes() / (1024 * 1024) );
+    print( "Used space: " );
   }
 }
 

@@ -5,18 +5,75 @@
 
 #include <stdlib.h>
 
-void print( char *str ) {
-  //printf( "%s", str );
+int printVPos = 0;
+bool printInEsc = false;
+void do_print( const char *str ) {
   Serial.print( str );
+  /*
+  char buffer[1500];
+  printInEsc = false;
+  int j = 0;
+  for ( int i = 0; i < 1499; i++ ) {
+    char ch = str[i];
+    if ( ch == '\0' ) {
+      break;
+    }
+    if ( printInEsc ) {
+      if ( ch == 'm' ) {
+        printInEsc = false;
+      }
+    } else {
+      if ( ch == '\x1b' ) {
+        printInEsc = true;
+      }
+      if ( ch == '\n' ) {
+        buffer[j] = '\0';
+        j = 0;
+        M5Cardputer.Display.println( buffer );
+      } else {
+        buffer[j++] = ch;
+      }
+    }
+  }
+  buffer[j] = '\0';
+  M5Cardputer.Display.print( buffer );
+  */
+}
+
+void print( String str ) {
+  do_print( str.c_str() );
+}
+
+void print( const char *str ) {
+  //printf( "%s", str );
+  do_print( str );
+}
+
+void print( char *str ) {
+  const char* cstr = str;
+  do_print( str );
 }
 
 void print( int v ) {
   //printf( "%d", v );
-  Serial.print( v );
+  char buffer[20];
+  itoa( v, buffer, sizeof( buffer ) );
+  const char* cstr = buffer;
+  do_print( buffer );
 }
 
 void println() {
   print( "\n" );
+}
+
+void println( String str ) {
+  print( str );
+  println();
+}
+
+void println( const char *str ) {
+  print( str );
+  println();
 }
 
 void println( char *str ) {
@@ -95,7 +152,7 @@ char *hexLine( uint8_t *data, int pos, int cols ) {
 
 char *hexLines( int addr, uint8_t *data, int pos, int rows, int cols ) {
   char lf[] = "\r\n";
-  static char lines[1000];
+  static char lines[1500];
   lines[0] = '\0';
   for ( int row = 0; row < rows; row++ ) {
     if ( row != 0 ) strcat( lines, lf );

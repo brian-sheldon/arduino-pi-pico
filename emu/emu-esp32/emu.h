@@ -8,8 +8,15 @@ extern "C" {
 
 static Z80 cpu;
 
-byte mem[65536];
+const size_t memSize = 0x10000;
+const size_t memMask = 0xffff;
+const size_t dataSize = 0x100;
+const size_t dataMask = 0xff;
+
+byte mem[ memSize ];
 byte ports[256];
+
+uint16_t traceCpu[ memSize ];
 
 const int queueSize = 256;
 int queuePos = 0;
@@ -76,7 +83,8 @@ uint8_t io_read( void *ctx, uint16_t port ) {
         queuePos--;
         return (int)ch;
       } else {
-        iowait = true;
+        cpuState.iowait = true;
+        cpuState.running = false;
         return 0xff;
       }
       break;
@@ -198,6 +206,7 @@ void setupMem() {
     } else {
       mem[i] = 0;
     }
+    traceCpu[i] = 0;
   }
 }
 
@@ -236,10 +245,62 @@ String status() {
   return s;
 }
 
+int steps( int n = 1 ) {
+  int ticks = 0;
+  int steps = 0;
+  // start timer
+  while ( cpuState.running && ( ticks < n ) ) {
+    if ( cpuState.stopset && cpu.pc == cpuState.stopat ) {
+      cpuState.stopped = true;
+      cpuState.running = false;
+    } else {
+      int t = z80_step(&cpu);
+      if ( t == 1 ) {
+        cpuState.halted = true;
+        cpuState.running = false;
+      } else {
+        ticks += t;
+        steps++;
+        if ( cpuState.traceCpu ) {
+          if ( traceCpu[cpu.pc] < 0xffff ) {
+            traceCpu[cpu.pc]++;
+          }
+        }
+      }
+    }
+  }
+  // stop timer
+  // calculate time
+  cpuState.ticks += ticks;
+  cpuState.steps += steps;
+  return ticks;
+}
+
+void cpu_frame() {
+  int clocks = 50000;
+  if ( cpuState.iowait ) {
+    if ( queuePos > 0 ) {
+      char ch = queue[0];
+      for ( int i = 0; i < queuePos; i++ ) {
+        queue[i-1] = queue[i];
+      }
+      queuePos--;
+      cpu.a = (int)ch & 0xff;
+      cpuState.iowait = false;
+      cpuState.running = true;
+    }
+  }
+  if ( cpuState.running && cpuState.on ) {
+    int ticks = steps( clocks );
+  }
+  //frames++;
+}
+
 void loopEmu() {
+  int loopticks = 50000;
   int loops = 10000;
   while ( loops-- > 0 ) {
-    if ( iowait ) {
+    if ( cpuState.iowait ) {
       if ( queuePos > 0 ) {
         char ch = queue[0];
         for ( int i = 0; i < queuePos; i++ ) {
@@ -247,11 +308,19 @@ void loopEmu() {
         }
         queuePos--;
         cpu.a = (int)ch & 0xff;
-        iowait = false;
+        cpuState.iowait = false;
       }
     }
-    if ( running && ! iowait ) {
-      ticks += z80_step(&cpu);
+    if ( running && ! cpuState.iowait ) {
+      if ( cpuState.stopset && cpuState.stopat == cpu.pc ) {
+        cpuState.stopped = true;
+      } else {
+        cpuState.stopped = false;
+        ticks = z80_step(&cpu);
+        loopticks = loopticks - ticks;
+        cpuState.ticks += ticks;
+        cpuState.steps++;
+      }
     }
   }
   //
