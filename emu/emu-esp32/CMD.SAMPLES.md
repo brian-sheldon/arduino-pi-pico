@@ -1,4 +1,4 @@
-# Command Line Reference
+# Command Samples
 
 ### Startup a CP/M Session, run Star Trek
 
