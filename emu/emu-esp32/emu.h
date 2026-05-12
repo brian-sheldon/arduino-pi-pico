@@ -16,9 +16,35 @@ const size_t dataMask = 0xff;
 byte mem[ memSize ];
 byte ports[256];
 
+//
+// Trace vars and funcs
+//
+
 const size_t traceCpuLen = 0x4000;
 size_t traceCpuStart = 0x0000;
 uint16_t traceCpu[ traceCpuLen ];
+
+const size_t traceMemLen = 0x4000;
+size_t traceMemStart = 0x0000;
+uint8_t traceMemRd[ traceMemLen ];
+uint8_t traceMemWr[ traceMemLen ];
+
+void traceCpuClr() {
+  for ( int i = 0; i < traceCpuLen; i++ ) {
+    traceCpu[i] = 0;
+  }
+}
+
+void traceMemClr() {
+  for ( int i = 0; i < traceMemLen; i++ ) {
+    traceMemRd[i] = 0;
+    traceMemWr[i] = 0;
+  }
+}
+
+//
+//
+//
 
 const int queueSize = 256;
 int queuePos = 0;
@@ -55,11 +81,27 @@ EmuDrive drive;
 
 uint8_t mem_read( void *ctx, uint16_t addr ) {
   (void)ctx;
+  if ( cpuState.traceCpu ) {
+    if ( addr > traceMemStart && addr < traceMemStart + traceMemLen ) {
+      int virtaddr = addr - traceMemStart;
+      if ( traceMemRd[virtaddr] < 0xff ) {
+        traceMemRd[virtaddr]++;
+      }
+    }
+  }
   return mem[addr];
 }
 
 void mem_write( void *ctx, uint16_t addr, uint8_t val ) {
   (void)ctx;
+  if ( cpuState.traceCpu ) {
+    if ( addr > traceMemStart && addr < traceMemStart + traceMemLen ) {
+      int virtaddr = addr - traceMemStart;
+      if ( traceMemWr[virtaddr] < 0xff ) {
+        traceMemWr[virtaddr]++;
+      }
+    }
+  }
   mem[addr] = val;
 }
 

@@ -3,22 +3,12 @@
 //
 // MIT License
 
-void trace_cpu_on() {}
-
-void trace_cpu_off() {}
-
-
-
-void trace_mem_clr() {}
-
 //
-// Cpu Trace Functions
+// Cpu Trace Funcs
 //
 
 void trace_cpu_clr() {
-  for ( int addr = 0; addr < traceCpuLen; addr++ ) {
-    traceCpu[addr] = 0;
-  }
+  traceCpuClr();
   println( "cpu trace data cleared ..." );
 }
 
@@ -47,7 +37,6 @@ void trace_cpu_show() {
     if ( addr >= beg && addr <= end ) {
       int count = traceCpu[addr];
       if ( count > over ) {
-        print( "count: " );
         print( dec0( count, 5 ) );
         print( "  addr: " );
         print( hex4( traceCpuStart + addr ) );
@@ -59,23 +48,84 @@ void trace_cpu_show() {
 }
 
 //
+// Mem Trace Funcs
+//
+
+void trace_mem_clr() {
+  traceMemClr();
+  println( "mem trace data cleared ..." );
+}
+
+void trace_mem_set() {
+  if ( cmdline.plen > 1 ) {
+    traceMemStart = hex2int( cmdline.p1 );
+  }
+  print( "trace mem start: " );
+  println( hex4( traceMemStart ) );
+}
+
+void trace_mem_show() {
+  int beg = 0x0000;
+  int end = 0xffff;
+  int min = 0;
+  if ( cmdline.plen > 1 ) {
+    beg = hex2int( cmdline.p1 ) & 0xffff;
+  }
+  if ( cmdline.plen > 2 ) {
+    end = hex2int( cmdline.p2 ) & 0xffff;
+  }
+  if ( cmdline.plen > 3 ) {
+    min = dec2int( cmdline.p3 ) & 0xffff;
+  }
+  size_t prev = 0;
+  for ( int addr = 0; addr < traceMemLen; addr++ ) {
+    if ( addr >= beg && addr <= end ) {
+      int rd = traceMemRd[addr];
+      int wr = traceMemWr[addr];
+      int rw = rd + wr;
+      int realaddr = traceMemStart + addr;
+      if ( rw != 0 ) {
+        if ( realaddr != prev + 1 ) {
+          print( "pc_" );
+          print( hex4( realaddr ) );
+          println( ":" );
+        }
+        prev = realaddr;
+      }
+      int data = mem[realaddr];
+      char ch[2];
+      ch[0] = '.';
+      ch[1] = '\0';
+      if ( data >= 0x20 && data <= 0x7e ) {
+        ch[0] = (char)data;
+      }
+      if ( rw > min ) {
+        print( dec0( rw, 4 ) );
+        print( "  addr: " );
+        print( hex4( realaddr ) );
+        print( " " );
+        print( hex2( data ) );
+        print( " " );
+        print( ch );
+        print( "  rd: " );
+        print( dec0( rd, 3 ) );
+        print( "  wr: " );
+        println( dec0( wr, 3 ) );
+      }
+    }
+  }
+}
+
 //
 //
-
-void trace_mem_save() {}
-
-void trace_cpu_save() {}
-
-void trace_mem_array() {}
-
-void trace_cpu_array() {}
-
-
-
+//
 
 cmd_entry_t cmds_trace[] = {
   { "cclr", trace_cpu_clr, "", "clear cpu trace data" },
-  { "cset", trace_cpu_set, "", "set cpu trace addr start" },
-  { "cshow", trace_cpu_show, "[beg] [end] [min]", "display num of op fetches at addr over min" },
+  { "cset", trace_cpu_set, "[addr]", "set cpu trace addr start" },
+  { "cshow", trace_cpu_show, "[beg] [end] [min]", "show num of op fetches at addr over min" },
+  { "mclr", trace_mem_clr, "", "clear mem trace data" },
+  { "mset", trace_mem_set, "[addr]", "set mem trace addr start" },
+  { "mshow", trace_mem_show, "[beg] [end] [min]", "show num of mem rd wr at addr over min" },
   { NULL, NULL, NULL, NULL }
 };
