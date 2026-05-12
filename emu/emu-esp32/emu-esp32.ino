@@ -5,10 +5,10 @@
 
 #include "M5Cardputer.h"
 
-#include "emu.cfg.h"
-#include "emu.util.h"
-#include "emu.state.h"
-#include "emu.cmd.main.h"
+#include "cfg.h"
+#include "util.h"
+#include "state.h"
+#include "cmd.main.h"
 #include "cli.h"
 
 void setup() {

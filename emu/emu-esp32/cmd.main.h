@@ -3,16 +3,16 @@
 //
 // MIT License
 
-#include "emu.cmd.h"
+#include "cmd.h"
 
 #include "emu.fs.h"
 #include "emu.h"
 
 #include <tuple>
 
-#include "emu.cmd.fs.h"
-#include "emu.cmd.disk.h"
-#include "emu.cmd.cpu.h"
+#include "cmd.fs.h"
+#include "cmd.disk.h"
+#include "cmd.cpu.h"
 #include "cmd.trace.h"
 
 static void main_colors() {
