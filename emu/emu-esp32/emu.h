@@ -16,7 +16,9 @@ const size_t dataMask = 0xff;
 byte mem[ memSize ];
 byte ports[256];
 
-uint16_t traceCpu[ memSize ];
+const size_t traceCpuLen = 0x4000;
+size_t traceCpuStart = 0x0000;
+uint16_t traceCpu[ traceCpuLen ];
 
 const int queueSize = 256;
 int queuePos = 0;
@@ -206,7 +208,9 @@ void setupMem() {
     } else {
       mem[i] = 0;
     }
-    traceCpu[i] = 0;
+    if ( i >= 0 && i < traceCpuLen ) {
+      traceCpu[i] = 0;
+    }
   }
 }
 
@@ -263,8 +267,11 @@ int steps( int n = 1 ) {
         ticks += t;
         steps++;
         if ( cpuState.traceCpu ) {
-          if ( traceCpu[pc] < 0xffff ) {
-            traceCpu[pc]++;
+          if ( pc > traceCpuStart && pc < traceCpuStart + traceCpuLen ) {
+            pc = pc - traceCpuStart;
+            if ( traceCpu[pc] < 0xffff ) {
+              traceCpu[pc]++;
+            }
           }
         }
       }
