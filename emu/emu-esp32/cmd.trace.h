@@ -76,6 +76,6 @@ void trace_cpu_array() {}
 cmd_entry_t cmds_trace[] = {
   { "cclr", trace_cpu_clr, "", "clear cpu trace data" },
   { "cset", trace_cpu_set, "", "set cpu trace addr start" },
-  { "show", trace_cpu_show, "[beg] [end] [min]", "display num of op fetches at addr over min" },
+  { "cshow", trace_cpu_show, "[beg] [end] [min]", "display num of op fetches at addr over min" },
   { NULL, NULL, NULL, NULL }
 };
