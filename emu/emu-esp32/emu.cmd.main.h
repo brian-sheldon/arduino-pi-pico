@@ -13,6 +13,7 @@
 #include "emu.cmd.fs.h"
 #include "emu.cmd.disk.h"
 #include "emu.cmd.cpu.h"
+#include "cmd.trace.h"
 
 static void main_colors() {
   println( "\x1b[0;30mBright: 0 Color: 0" );
@@ -44,38 +45,46 @@ cmd_entry_t cmds_main[] = {
 };
 
 static void help_one( char *grp, cmd_entry_t *cmds ) {
-  char dashs10[] = "----------";
-  char dashs60[] = "------------------------------------------------------------";
   char buffer[80];
-  snprintf( buffer, sizeof( buffer ), "%s %-7s %s", dashs10, grp, dashs60 );
+  memset( buffer, '=', 5 );
+  buffer[5] = '\0';
+  print( buffer );
+  snprintf( buffer, sizeof( buffer ), "  %-s  ", grp );
+  print( buffer );
+  int rem = 79 - 5 - 4 - strlen( grp );
+  memset( buffer, '=', rem );
+  buffer[rem] = '\0';
   println( buffer );
   for ( int i = 0; cmds[i].name != NULL; i++ ) {
-    snprintf( buffer, sizeof( buffer ), "%-10s  %-16s ; %s", cmds[i].name, cmds[i].params, cmds[i].desc );
+    snprintf( buffer, sizeof( buffer ), "%-8s  %-18s ; %s", cmds[i].name, cmds[i].params, cmds[i].desc );
     println( buffer );
   }
 }
 
 static void help() {
-  help_one( "main", cmds_main );
+  
   help_one( "cpu", cmds_cpu );
+  help_one( "trace", cmds_trace );
   help_one( "disk", cmds_disk );
   help_one( "fs", cmds_fs );
+  help_one( "main", cmds_main );
 }
 
 static void words_one( cmd_entry_t *cmds ) {
   for ( int i = 0; cmds[i].name != NULL; i++ ) {
-    Serial.print( cmds[i].name );
-    Serial.print( " " );
+    print( cmds[i].name );
+    print( " " );
   }
 }
 
 static void words() {
-  Serial.print( "[ " );
-  words_one( cmds_main );
+  print( "[ " );
   words_one( cmds_cpu );
+  words_one( cmds_trace );
   words_one( cmds_disk );
   words_one( cmds_fs );
-  Serial.println( "]" );
+  words_one( cmds_main );
+  println( "]" );
 }
 
 static bool exec_one( cmd_entry_t *cmds, char *cmd ) {
@@ -91,6 +100,7 @@ static bool exec_one( cmd_entry_t *cmds, char *cmd ) {
 static void exec( char *cmd ) {
   bool res = false;
   if ( ! res ) res = exec_one( cmds_cpu, cmd );
+  if ( ! res ) res = exec_one( cmds_trace, cmd );
   if ( ! res ) res = exec_one( cmds_disk, cmd );
   if ( ! res ) res = exec_one( cmds_fs, cmd );
   if ( ! res ) res = exec_one( cmds_main, cmd );
@@ -156,8 +166,8 @@ void do_cmd( char *cmd ) {
 }
 
 void setupCmd() {
-  Serial.println();
-  Serial.println( "test cmd.main begs ..." );
+  println();
+  println( "test cmd.main begs ..." );
   
-  Serial.println( "test cmd.main ends ..." );
+  println( "test cmd.main ends ..." );
 }

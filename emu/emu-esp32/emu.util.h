@@ -106,6 +106,12 @@ int hex2int( char *str ) {
   }
 }
 
+char *dec0( int v, int width = 0 ) {
+  static char buffer[ 40 ];
+  snprintf( buffer, sizeof( buffer ), "% *d", width, v );
+  return buffer;
+}
+
 char *hex0( int v, int width = 0 ) {
   static char buffer[ 20 ];
   snprintf( buffer, sizeof( buffer ), "%0*x", width, v );

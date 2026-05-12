@@ -127,27 +127,35 @@ void cpu_d() {
 
 void cpu_step() {
   bool each = false;
-  int steps = 1;
+  int loop = 0;
+  int loops = 1;
   int ticks = 0;
   if ( cmdline.plen > 1 ) {
-    steps = dec2int( cmdline.p1 );
+    loops = dec2int( cmdline.p1 );
   }
   if ( cmdline.plen > 2 ) {
     each = true;
   }
-  while ( steps-- > 0 ) {
-    ticks += z80_step(&cpu);
-    if ( each ) {
-      cpu_state();
-      if ( steps > 0 ) {
-        print( colors[color].prompt );
-        println( ">>> " );
+  if ( cpuState.on == false && cpuState.iowait == false && cpuState.stopped == false && cpuState.halted == false ) {
+    cpuState.running = true;
+  } else {
+    println( "step not taken as cpu is either on or iowait, stopat, halt is not clear ..." );
+    cpu_state();
+    each = true;
+  }
+  while ( loop++ < loops ) {
+    if ( cpuState.running ) {
+      ticks += steps();
+      if ( each ) {
+        cpu_state();
+        if ( loop > 0 && loop < loops ) {
+          print( colors[color].prompt );
+          println( ">>> " );
+        }
       }
     }
   }
   if ( ! each ) cpu_state();
-  print( "ticks: " );
-  println( ticks );
   //defcmd = p0;
   
 }

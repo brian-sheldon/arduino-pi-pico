@@ -250,6 +250,7 @@ int steps( int n = 1 ) {
   int steps = 0;
   // start timer
   while ( cpuState.running && ( ticks < n ) ) {
+    int pc = cpu.pc;
     if ( cpuState.stopset && cpu.pc == cpuState.stopat ) {
       cpuState.stopped = true;
       cpuState.running = false;
@@ -262,8 +263,8 @@ int steps( int n = 1 ) {
         ticks += t;
         steps++;
         if ( cpuState.traceCpu ) {
-          if ( traceCpu[cpu.pc] < 0xffff ) {
-            traceCpu[cpu.pc]++;
+          if ( traceCpu[pc] < 0xffff ) {
+            traceCpu[pc]++;
           }
         }
       }
