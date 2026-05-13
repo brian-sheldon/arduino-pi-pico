@@ -70,7 +70,7 @@ static void disk_disk() {
   println( imgs[drv].secinfo( drv, track, logical ) );
   println( hexLines( 0, buffer, 0, 8, 16 ) );
   imgs[drv].next();
-  //defcmd = p0;
+  strcpy( defcmd, cmdline.p0 );
 }
 
 static void disk_trklog() {

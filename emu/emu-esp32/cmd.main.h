@@ -10,6 +10,8 @@
 
 #include <tuple>
 
+char defcmd[20] = "";
+
 #include "cmd.fs.h"
 #include "cmd.disk.h"
 #include "cmd.cpu.h"
@@ -163,6 +165,16 @@ void do_cmd( char *cmd ) {
   //
   //Serial.println( cmdline.plen );
   //Serial.println( cmdline.args );
+}
+
+void cmdLine( String cmd ) {
+  int bufferSize = cmd.length() + 1;
+  char buffer[bufferSize];
+  cmd.toCharArray( buffer, bufferSize );
+  if ( strcmp( buffer, "" ) == 0 ) {
+    strcpy( buffer, defcmd );
+  }
+  do_cmd( buffer );
 }
 
 void setupCmd() {

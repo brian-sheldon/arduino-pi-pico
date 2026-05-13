@@ -6,6 +6,8 @@ extern "C" {
 //
 // MIT License
 
+#include "z80.dis.h"
+
 static Z80 cpu;
 
 const size_t memSize = 0x10000;

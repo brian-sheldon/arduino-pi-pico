@@ -63,7 +63,7 @@ void print( int v ) {
 }
 
 void println() {
-  print( "\n" );
+  print( "\r\n" );
 }
 
 void println( String str ) {
@@ -108,7 +108,7 @@ int hex2int( char *str ) {
 
 char *dec0( int v, int width = 0 ) {
   static char buffer[ 40 ];
-  snprintf( buffer, sizeof( buffer ), "% *d", width, v );
+  snprintf( buffer, sizeof( buffer ), "%*d", width, v );
   return buffer;
 }
 

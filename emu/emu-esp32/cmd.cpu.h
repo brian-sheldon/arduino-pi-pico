@@ -6,6 +6,7 @@
 void cpu_mhz() {
   print( "mhz: " );
   println( mhz );
+  strcpy( defcmd, cmdline.p0 );
 }
 
 void cpu_on() {
@@ -72,6 +73,24 @@ void regStr( char *buffer, char *reg, int val, int width = 1, int spcs = 1, bool
   }
 }
 
+int disaddr = 0;
+
+void cpu_l() {
+  int addr = disaddr;
+  int lines = 8;
+  if ( cmdline.plen > 1 ) {
+    addr = hex2int( cmdline.p1 );
+  }
+  if ( cmdline.plen > 2 ) {
+    lines = dec2int( cmdline.p2 );
+  }
+  for ( int i = 0; i < lines; i++ ) {
+    addr += dis( mem, addr & 0xffff );
+  }
+  disaddr = addr;
+  strcpy( defcmd, cmdline.p0 );
+}
+
 void cpu_state() {
   char buffer[800];
   buffer[0] = '\0';
@@ -113,6 +132,7 @@ void cpu_state() {
   regStr( buffer, "steps", cpuState.steps, -1 );
   //
   println( buffer );
+  strcpy( defcmd, cmdline.p0 );
 }
 
 void cpu_d() {
@@ -122,7 +142,7 @@ void cpu_d() {
   }
   println( hexLines( addr, mem, addr, 16, 16 ) );
   dumpaddr = addr + 256;
-  //defcmd = p0;
+  strcpy( defcmd, cmdline.p0 );
 }
 
 void cpu_step() {
@@ -156,13 +176,13 @@ void cpu_step() {
     }
   }
   if ( ! each ) cpu_state();
-  //defcmd = p0;
-  
+  strcpy( defcmd, cmdline.p0 );
 }
 
 cmd_entry_t cmds_cpu[] = {
   { "mhz", cpu_mhz, "", "cpu mhz" },
   { "d", cpu_d, "[addr]", "mem dump at next addr or given addr" },
+  { "l", cpu_l ,"[addr]" , "disassembly listing for addr" },
   { "step", cpu_step ,"[steps]" , "cpu step once or given steps" },
   { "state", cpu_state ,"" , "cpu state" },
   { "stopclr", cpu_stopclr, "", "stopat clr" },

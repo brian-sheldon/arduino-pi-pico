@@ -37,11 +37,14 @@ void trace_cpu_show() {
     if ( addr >= beg && addr <= end ) {
       int count = traceCpu[addr];
       if ( count > over ) {
+        int realaddr = traceCpuStart + addr;
         print( dec0( count, 5 ) );
         print( "  addr: " );
         print( hex4( traceCpuStart + addr ) );
         print( "  byte: " );
-        println( hex2( mem[addr] ) );
+        print( hex2( mem[realaddr] ) );
+        print( "    " );
+        dis( mem, realaddr );
       }
     }
   }
@@ -100,8 +103,8 @@ void trace_mem_show() {
         ch[0] = (char)data;
       }
       if ( rw > min ) {
-        print( dec0( rw, 4 ) );
-        print( "  addr: " );
+        print( dec0( rw, 3 ) );
+        print( "  " );
         print( hex4( realaddr ) );
         print( " " );
         print( hex2( data ) );

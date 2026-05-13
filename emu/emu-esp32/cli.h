@@ -24,17 +24,6 @@ void cliSetup() {
 
 
 
-String defcmd = "";
-void cmdLine( String cmd ) {
-  if ( cmd == "" ) {
-    cmd = defcmd;
-  }
-  
-  int bufferSize = cmd.length() + 1;
-  char buffer[bufferSize];
-  cmd.toCharArray( buffer, bufferSize );
-  do_cmd( buffer );
-}
 
 //
 // line editing loop
