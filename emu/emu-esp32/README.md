@@ -22,6 +22,10 @@ And it even has some color when used with an ansi color terminal.
 
 I ran into a bug that caused a crash due to a variable that acts as an index representing the drive the command shell is currently working with.  This variable is not related to the drive that is currently configured within CP/M.  However, there was an issue whereby when I connected keyboard IO to the CP/M system and then went back to the command line monitor, this variable, drv, had somehow been corrupted.  I moved the location of the variable from emu.h to emu.state.h as that was where I intend it to be located.  The issue went away, but I still hope to move the variable back temporarily to try and find out why this was happening.
 
+## Sample Images
+
+![emu.trace.png](img/emu.trace.png)
+
 ## Running It
 
 The emu folder in this director needs to be placed on the SDcard in the M5Cardputer.  It currently has 4 CP/M disk images.  The CP/M ones are from the Z80pack github project with a few files added.
