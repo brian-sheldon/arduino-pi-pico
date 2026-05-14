@@ -24,6 +24,8 @@ I ran into a bug that caused a crash due to a variable that acts as an index rep
 
 ## Sample Images
 
+Example of a cpu trace session.  The first command, cset c000 is used to set the trace start memory address.  This is required as the limited memory on the microcontroller does not allow tracking cpu and memory requests across the full 64k.  It is therefore limited to 16k only, so c000 was choosen at is covers all the cpm os core.  The boot sector is then loaded, the cpu started and we can then view the cpu trace data.
+
 ![emu.trace.png](img/emu.trace.png)
 
 ## Running It
