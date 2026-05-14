@@ -145,6 +145,11 @@ void cpu_d() {
   strcpy( defcmd, cmdline.p0 );
 }
 
+void cpu_next() {
+  print( "   " );
+  dis( mem, cpu.pc );
+}
+
 void cpu_step() {
   bool each = false;
   int loop = 0;
@@ -165,6 +170,10 @@ void cpu_step() {
   }
   while ( loop++ < loops ) {
     if ( cpuState.running ) {
+      if ( each || loop == loops ) {
+        print( "   " );
+        dis( mem, cpu.pc );
+      }
       ticks += steps();
       if ( each ) {
         cpu_state();
@@ -185,6 +194,7 @@ cmd_entry_t cmds_cpu[] = {
   { "l", cpu_l ,"[addr]" , "disassembly listing for addr" },
   { "step", cpu_step ,"[steps]" , "cpu step once or given steps" },
   { "state", cpu_state ,"" , "cpu state" },
+  { "next", cpu_next ,"" , "show next instruction to run" },
   { "stopclr", cpu_stopclr, "", "stopat clr" },
   { "stopset", cpu_stopset, "", "stopat set" },
   { "stopat", cpu_stopat, "[addr]", "stopat addr" },

@@ -33,18 +33,22 @@ void trace_cpu_show() {
   if ( cmdline.plen > 3 ) {
     over = dec2int( cmdline.p3 ) & 0xffff;
   }
+  size_t next = 0;
   for ( int addr = 0; addr < traceCpuLen; addr++ ) {
     if ( addr >= beg && addr <= end ) {
       int count = traceCpu[addr];
       if ( count > over ) {
         int realaddr = traceCpuStart + addr;
+        if ( realaddr != next ) {
+          print( colors[color].dis_label );
+          print( "       pc_" );
+          print( hex4( realaddr ) );
+          println( ":" );
+        }
+        print( colors[color].trace_value );
         print( dec0( count, 5 ) );
-        print( "  addr: " );
-        print( hex4( traceCpuStart + addr ) );
-        print( "  byte: " );
-        print( hex2( mem[realaddr] ) );
-        print( "    " );
-        dis( mem, realaddr );
+        print( "  " );
+        next = realaddr + dis( mem, realaddr );
       }
     }
   }
